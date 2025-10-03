@@ -8,6 +8,6 @@ extern "C" {
 namespace toolbox {
     class Acquisitor {
         public:
-            static const char* pick_file(bool multiple, std::vector<const char*> filters = {});
+            static char* pick_file(bool multiple, std::vector<const char*> filters = {});
     };
 }
