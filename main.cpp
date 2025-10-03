@@ -1,14 +1,7 @@
 #include <iostream>
-#include <SDL.h>
-#include <SDL_image.h>
-#include <imgui.h>
-#include <backends/imgui_impl_sdl2.h>
-#include <backends/imgui_impl_sdlrenderer2.h>
-#include "acquisitor/acquisitor.hpp"
 #include "manager/window.hpp"
 #include "panels/menubar.hpp"
 #include "panels/image-preview.hpp"
-#include "shared/state.hpp"
 
 int main() {
     // Initialize SDL
@@ -17,7 +10,9 @@ int main() {
         return -1;
     }
 
-    toolbox::WindowManager::init_context();
+    if (!toolbox::WindowManager::init_context()) {
+        return -1;
+    }
 
     bool running = true;
     SDL_Event event;
@@ -26,6 +21,7 @@ int main() {
 
     init_display_state(toolbox::WindowManager::window);
 
+    // add all panels sto the window manager
     toolbox::WindowManager::register_panel<IMenuBarPanel>();
     toolbox::WindowManager::register_panel<IImagePreviewPanel>();
 
@@ -39,26 +35,7 @@ int main() {
         }
 
         toolbox::WindowManager::start_frame();
-
-        // Your GUI
-
         toolbox::WindowManager::draw();
-
-        // ImGui::SetNextWindowPos(ImVec2(DISPLAY_WIDTH / 5, 30), ImGuiCond_Always);
-        // ImGui::SetNextWindowSize(ImVec2(DISPLAY_WIDTH - 2 * (DISPLAY_WIDTH / 5), DISPLAY_HEIGHT - 30), ImGuiCond_Always);
-        // toolbox::WindowManager::createVirtualWindow("Preview", 
-        // ImGuiWindowFlags_NoTitleBar |
-        // ImGuiWindowFlags_NoMove |
-        // ImGuiWindowFlags_NoResize |
-        // ImGuiWindowFlags_NoCollapse |
-        // ImGuiWindowFlags_NoBackground |
-        // ImGuiTableFlags_NoBordersInBody);
-
-
-        // toolbox::WindowManager::showImage(renderer, filepath);
-        // toolbox::WindowManager::endVirtualWindow();
-
-        // Rendering
         toolbox::WindowManager::render_frame();
     }
 

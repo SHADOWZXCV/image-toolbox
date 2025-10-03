@@ -23,14 +23,6 @@ set_target_properties(tinyfiledialogs PROPERTIES LINKER_LANGUAGE C)
 set(OpenCV_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/external/opencv/include")
 set(OpenCV_LIB_RELEASE "${CMAKE_SOURCE_DIR}/external/opencv/lib/opencv_world4120.lib")
 set(OpenCV_LIB_DEBUG   "${CMAKE_SOURCE_DIR}/external/opencv/lib/opencv_world4120d.lib")
-
-# ---------------- GLFW ----------------
-add_subdirectory(${CMAKE_SOURCE_DIR}/external/glfw)
-
-# ---------------- GLEW ----------------
-set(GLEW_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/external/glew/include")
-set(GLEW_LIB_RELEASE "${CMAKE_SOURCE_DIR}/external/glew/lib/Release/x64/glew32s.lib")
-
 # ---------------- SDL2 ----------------
 set(SDL2_DIR "${CMAKE_SOURCE_DIR}/external/SDL2")
 set(SDL2_INCLUDE_DIR "${SDL2_DIR}/include")
@@ -56,20 +48,12 @@ target_include_directories(toolbox PRIVATE
     ${IMGUI_DIR}/backends
     ${TINY_DIALOG_DIR}
     ${OpenCV_INCLUDE_DIR}
-    ${GLEW_INCLUDE_DIR}
-    ${GLFW_INCLUDE_DIRS}
 )
-
-# Define GLEW_STATIC if using static lib
-target_compile_definitions(toolbox PRIVATE GLEW_STATIC)
 
 target_link_libraries(toolbox
     SDL2
     SDL2_image
     tinyfiledialogs
-    glfw
-    opengl32
-    optimized ${GLEW_LIB_RELEASE}
     debug   ${OpenCV_LIB_DEBUG}
     optimized ${OpenCV_LIB_RELEASE}
 )

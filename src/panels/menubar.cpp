@@ -17,10 +17,6 @@ void IMenuBarPanel::draw() {
     ImGui::SameLine();
     if (ImGui::Button("Settings")) {}
 
-    // if (imgTexture) {
-    //     ImGui::Text("Selected: %s", filepath);
-    // }
-
     ImGui::PopStyleVar();
     ImGui::PopStyleColor(3);
 }
