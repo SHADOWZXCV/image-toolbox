@@ -10,7 +10,7 @@ int main() {
         return -1;
     }
 
-    if (!toolbox::WindowManager::init_context()) {
+    if (!Graphics::WindowManager::init_context()) {
         return -1;
     }
 
@@ -19,11 +19,11 @@ int main() {
     SDL_Texture *imgTexture = nullptr;
     int imgWidth = 0, imgHeight = 0;
 
-    init_display_state(toolbox::WindowManager::window);
+    init_display_state(Graphics::WindowManager::window);
 
     // add all panels sto the window manager
-    toolbox::WindowManager::register_panel<IMenuBarPanel>();
-    toolbox::WindowManager::register_panel<IImagePreviewPanel>();
+    Graphics::WindowManager::register_panel<IMenuBarPanel>();
+    Graphics::WindowManager::register_panel<IImagePreviewPanel>();
 
     // Main loop
     while (running) {
@@ -34,9 +34,9 @@ int main() {
                 running = false;
         }
 
-        toolbox::WindowManager::start_frame();
-        toolbox::WindowManager::draw();
-        toolbox::WindowManager::render_frame();
+        Graphics::WindowManager::start_frame();
+        Graphics::WindowManager::draw();
+        Graphics::WindowManager::render_frame();
     }
 
     // Cleanup
@@ -44,8 +44,8 @@ int main() {
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
 
-    SDL_DestroyRenderer(toolbox::WindowManager::renderer);
-    SDL_DestroyWindow(toolbox::WindowManager::window);
+    SDL_DestroyRenderer(Graphics::WindowManager::renderer);
+    SDL_DestroyWindow(Graphics::WindowManager::window);
     SDL_Quit();
 
     return 0;

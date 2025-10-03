@@ -10,7 +10,7 @@
 #include "manager/panel.hpp"
 
 
-namespace toolbox {
+namespace Graphics {
     class WindowManager {
         public:
         static SDL_Window* window;

@@ -10,7 +10,7 @@ void IMenuBarPanel::draw() {
     // Horizontal buttons
     if (ImGui::Button("Open")) {
         this->filepath = toolbox::Acquisitor::pick_file(false);
-        toolbox::WindowManager::setChosenImagePath(this->filepath);
+        Graphics::WindowManager::setChosenImagePath(this->filepath);
     }
     ImGui::SameLine();
     if (ImGui::Button("Save")) {}

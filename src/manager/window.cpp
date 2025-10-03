@@ -1,7 +1,7 @@
 #pragma once
 #include "manager/window.hpp"
 
-using namespace toolbox;
+using namespace Graphics;
 
 SDL_Window* WindowManager::window;
 SDL_Renderer* WindowManager::renderer;
@@ -51,7 +51,7 @@ bool WindowManager::createVirtualWindow(const char* name, ImGuiWindowFlags flags
 }
 
 bool WindowManager::renderPreviewImage() {
-    char *path = toolbox::WindowManager::getChosenImagePath();
+    char *path = WindowManager::getChosenImagePath();
 
     if (!path) {
         ImGui::Text("No image is selected");
@@ -59,7 +59,7 @@ bool WindowManager::renderPreviewImage() {
         return false;
     }
 
-    ImageRenderer renderer = ImageRenderer::buildSDLRenderer(WindowManager::renderer, path);
+    toolbox::ImageRenderer renderer = toolbox::ImageRenderer::buildSDLRenderer(WindowManager::renderer, path);
 
     if (!renderer.image_texture) {
         ImGui::Text("No image is selected");
@@ -79,12 +79,12 @@ bool WindowManager::draw() {
     for(auto &panel: WindowManager::panels) {
         ImGui::SetNextWindowPos(panel->getPosition());
         ImGui::SetNextWindowSize(panel->getSize());
-        toolbox::WindowManager::createVirtualWindow(panel->getName(),
+        WindowManager::createVirtualWindow(panel->getName(),
         panel->getImGuiFlags());
 
         panel->draw();
 
-        toolbox::WindowManager::endVirtualWindow();
+        WindowManager::endVirtualWindow();
     }
 
     return true;
