@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 #include <opencv2/opencv.hpp>
 #include <SDL.h>
 
@@ -9,7 +10,7 @@ namespace toolbox {
             cv::Mat cv_image;
             SDL_Texture *image_texture;
         
-            static ImageRenderer buildSDLRenderer(SDL_Renderer *SDL_renderer, const char *path);
+            static ImageRenderer buildSDLRenderer(SDL_Renderer *SDL_renderer, std::string path);
             ExplodedOpenCVMatrix *explode_image();
             bool load_image(const char* path);
     };

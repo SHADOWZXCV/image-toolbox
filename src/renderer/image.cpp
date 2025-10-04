@@ -15,10 +15,10 @@ ExplodedOpenCVMatrix *ImageRenderer::explode_image() {
     return &this->cv_image;
 }
 
-ImageRenderer ImageRenderer::buildSDLRenderer(SDL_Renderer *SDL_renderer, const char *path) {
+ImageRenderer ImageRenderer::buildSDLRenderer(SDL_Renderer *SDL_renderer, std::string path) {
     ImageRenderer renderer;
 
-    renderer.load_image(path);
+    renderer.load_image(path.c_str());
 
     ExplodedOpenCVMatrix *image = renderer.explode_image();
 

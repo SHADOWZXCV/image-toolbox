@@ -9,7 +9,7 @@ std::vector<std::unique_ptr<IPanel>> WindowManager::panels;
 std::vector<SDL_Texture*> WindowManager::owned_textures;
 std::vector<Assets> WindowManager::assets;
 
-char *WindowManager::imagepath = "../assets/wow_toolbox.png";
+std::string WindowManager::imagepath = "../assets/wow_toolbox.png";
 
 bool WindowManager::start_frame() {
     try
@@ -48,11 +48,11 @@ bool WindowManager::render_frame() {
 }
 
 bool WindowManager::cleanup_old_textures() {
-    for(auto texture: WindowManager::owned_textures) {
-        SDL_DestroyTexture(texture);
+    for(auto asset: WindowManager::assets) {
+        SDL_DestroyTexture(asset.SDL_texture);
     }
 
-    WindowManager::owned_textures.clear();
+    WindowManager::assets.clear();
 
     return true;
 }
@@ -64,47 +64,51 @@ bool WindowManager::createVirtualWindow(const char* name, ImGuiWindowFlags flags
 }
 
 bool WindowManager::renderPreviewImage() {
-    char *path = WindowManager::getChosenImagePath();
+    std::string path = WindowManager::getChosenImagePath();
 
-    if (!path) {
+    if (path.empty()) {
         ImGui::Text("No image is selected");
 
         return false;
     }
 
-    SDL_Texture *texture = nullptr;
-    bool assetExists = false;
+    Assets *asset = nullptr;
 
-    for (auto &asset: assets) {
-        if (asset.path == path) {
-            texture = asset.SDL_texture;
-            assetExists = true;
+    for (auto &stored_asset: assets) {
+        if (stored_asset.path == path) {
+            asset = &stored_asset;
             break;
         }
     }
 
-    if (!assetExists) {
+    if (!asset) {
         cleanup_old_textures();
+        WindowManager::assets.clear();
 
         toolbox::ImageRenderer renderer = toolbox::ImageRenderer::buildSDLRenderer(WindowManager::renderer, path);
-        texture = renderer.image_texture;
 
-        insert_texture(texture);
+        Assets newAsset;
+        newAsset.path = path;
+        newAsset.image = renderer.cv_image;
+        newAsset.SDL_texture = renderer.image_texture;
+
+        WindowManager::assets.push_back(newAsset);
+
+        asset = &WindowManager::assets.back();
     }
 
-    if (texture) {
-        ImGui::Image((ImTextureID)texture, ImVec2(ImGui::GetIO().DisplaySize.x - 2 * (ImGui::GetIO().DisplaySize.x / 5) - 20, ImGui::GetIO().DisplaySize.y - 60));
+    if (asset->SDL_texture) {
+        float width = ImGui::GetWindowSize().x;
+        float height = ImGui::GetWindowSize().y;
+        ImVec2 size = ImVec2(width - 2 * (width / 5), height - 2 * (height / 5));
+        // ImVec2 size = ImVec2(DISPLAY_WIDTH - 2 * (DISPLAY_WIDTH / 5) - 20, DISPLAY_HEIGHT - 60);
+        ImGui::Image((ImTextureID)asset->SDL_texture, size);
     } else {
         ImGui::Text("No image is selected");
     }
 
     return true;
 }
-
-void WindowManager::insert_texture(SDL_Texture *texture) {
-    if (texture) WindowManager::owned_textures.push_back(texture);
-}
-
 
 bool WindowManager::endVirtualWindow() {
     ImGui::End();
@@ -127,11 +131,11 @@ bool WindowManager::draw() {
     return true;
 }
 
-void WindowManager::setChosenImagePath(char *filepath) {
+void WindowManager::setChosenImagePath(std::string filepath) {
     WindowManager::imagepath = filepath;
 }
 
-char *WindowManager::getChosenImagePath() {
+std::string WindowManager::getChosenImagePath() {
     return WindowManager::imagepath;
 }
 

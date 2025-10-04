@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <string>
 #include <SDL.h>
 #include <imgui.h>
 #include <backends/imgui_impl_sdl2.h>
@@ -8,10 +9,12 @@
 #include <vector>
 #include "renderer/image.hpp"
 #include "manager/panel.hpp"
+#include "shared/state.hpp"
 
 struct Assets {
-    char *path;
+    std::string path;
     SDL_Texture *SDL_texture;
+    cv::Mat image;
 };
 
 namespace Graphics {
@@ -23,7 +26,6 @@ namespace Graphics {
         template<typename TPanel>
         static bool register_panel() {
             static_assert(std::is_base_of<IPanel, TPanel>::value, "TPanel must inherit IPanel");
-            std::cout << DISPLAY_WIDTH << std::endl;
             WindowManager::panels.push_back(std::make_unique<TPanel>());
 
             return true;
@@ -34,11 +36,11 @@ namespace Graphics {
         static bool render_frame();
         static bool renderPreviewImage();
         static bool draw();
-        static void setChosenImagePath(char *filepath);
-        static char *getChosenImagePath();
+        static void setChosenImagePath(std::string filepath);
+        static std::string getChosenImagePath();
         
         private:
-            static char *imagepath;
+            static std::string imagepath;
             static std::vector<SDL_Texture*> owned_textures;
             static std::vector<Assets> assets;
             static std::vector<std::unique_ptr<IPanel>> panels;
