@@ -34,6 +34,8 @@ int main() {
                 running = false;
         }
 
+        SDL_Delay(16);
+
         Graphics::WindowManager::start_frame();
         Graphics::WindowManager::draw();
         Graphics::WindowManager::render_frame();

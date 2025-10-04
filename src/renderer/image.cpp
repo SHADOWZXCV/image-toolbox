@@ -54,7 +54,8 @@ ImageRenderer ImageRenderer::buildSDLRenderer(SDL_Renderer *SDL_renderer, const 
 
     // Create texture from surface
     SDL_Texture* texture = SDL_CreateTextureFromSurface(SDL_renderer, surface);
-    SDL_FreeSurface(surface); // texture now owns the data>
+
+    SDL_FreeSurface(surface);
 
     renderer.image_texture = texture;
 

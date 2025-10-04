@@ -6,8 +6,10 @@ using namespace Graphics;
 SDL_Window* WindowManager::window;
 SDL_Renderer* WindowManager::renderer;
 std::vector<std::unique_ptr<IPanel>> WindowManager::panels;
+std::vector<SDL_Texture*> WindowManager::owned_textures;
+std::vector<Assets> WindowManager::assets;
 
-char *WindowManager::imagepath;
+char *WindowManager::imagepath = "../assets/wow_toolbox.png";
 
 bool WindowManager::start_frame() {
     try
@@ -44,6 +46,17 @@ bool WindowManager::render_frame() {
         return false;
     }
 }
+
+bool WindowManager::cleanup_old_textures() {
+    for(auto texture: WindowManager::owned_textures) {
+        SDL_DestroyTexture(texture);
+    }
+
+    WindowManager::owned_textures.clear();
+
+    return true;
+}
+
 bool WindowManager::createVirtualWindow(const char* name, ImGuiWindowFlags flags) {
     return ImGui::Begin(name,
     nullptr,
@@ -59,16 +72,40 @@ bool WindowManager::renderPreviewImage() {
         return false;
     }
 
-    toolbox::ImageRenderer renderer = toolbox::ImageRenderer::buildSDLRenderer(WindowManager::renderer, path);
+    SDL_Texture *texture = nullptr;
+    bool assetExists = false;
 
-    if (!renderer.image_texture) {
-        ImGui::Text("No image is selected");
+    for (auto &asset: assets) {
+        if (asset.path == path) {
+            texture = asset.SDL_texture;
+            assetExists = true;
+            break;
+        }
+    }
+
+    if (!assetExists) {
+        cleanup_old_textures();
+
+        toolbox::ImageRenderer renderer = toolbox::ImageRenderer::buildSDLRenderer(WindowManager::renderer, path);
+        texture = renderer.image_texture;
+
+        insert_texture(texture);
+    }
+
+    if (texture) {
+        ImGui::Image((ImTextureID)texture, ImVec2(ImGui::GetIO().DisplaySize.x - 2 * (ImGui::GetIO().DisplaySize.x / 5) - 20, ImGui::GetIO().DisplaySize.y - 60));
     } else {
-        ImGui::Image((ImTextureID)renderer.image_texture, ImVec2(ImGui::GetIO().DisplaySize.x - 2 * (ImGui::GetIO().DisplaySize.x / 5) - 20, ImGui::GetIO().DisplaySize.y - 60));
+        ImGui::Text("No image is selected");
     }
 
     return true;
 }
+
+void WindowManager::insert_texture(SDL_Texture *texture) {
+    if (texture) WindowManager::owned_textures.push_back(texture);
+}
+
+
 bool WindowManager::endVirtualWindow() {
     ImGui::End();
     
@@ -117,7 +154,7 @@ bool WindowManager::init_context() {
     }
 
     // Create SDL renderer
-    WindowManager::renderer = SDL_CreateRenderer(WindowManager::window, -1, SDL_RENDERER_ACCELERATED);
+    WindowManager::renderer = SDL_CreateRenderer(WindowManager::window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
     if (!WindowManager::renderer) {
         std::cerr << "Error creating SDL_Renderer: " << SDL_GetError() << std::endl;
