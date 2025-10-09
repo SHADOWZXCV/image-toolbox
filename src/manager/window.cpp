@@ -8,6 +8,8 @@ SDL_Renderer* WindowManager::renderer;
 std::vector<std::unique_ptr<IPanel>> WindowManager::panels;
 std::vector<SDL_Texture*> WindowManager::owned_textures;
 std::vector<Assets> WindowManager::assets;
+std::queue<std::pair<std::string, unsigned int>> WindowManager::commands;
+std::unordered_map<std::string, IPanel*> WindowManager::panel_map;
 
 std::string WindowManager::imagepath = "../assets/wow_toolbox.png";
 
@@ -57,13 +59,13 @@ bool WindowManager::cleanup_old_textures() {
     return true;
 }
 
-bool WindowManager::createVirtualWindow(const char* name, ImGuiWindowFlags flags) {
-    return ImGui::Begin(name,
+bool WindowManager::createVirtualWindow(std::string name, ImGuiWindowFlags flags) {
+    return ImGui::Begin(name.c_str(),
     nullptr,
     flags);
 }
 
-bool WindowManager::renderPreviewImage() {
+bool WindowManager::renderPreviewImage(float zoom_percentage) {
     std::string path = WindowManager::getChosenImagePath();
 
     if (path.empty()) {
@@ -100,7 +102,14 @@ bool WindowManager::renderPreviewImage() {
     if (asset->SDL_texture) {
         float width = ImGui::GetWindowSize().x;
         float height = ImGui::GetWindowSize().y;
-        ImVec2 size = ImVec2(width - 2 * (width / 5), height - 2 * (height / 5));
+        float max_w = width * zoom_percentage,
+        max_h =  height * zoom_percentage;
+
+        float scale = std::min(max_w / asset->image.cols, max_h / asset->image.rows);
+
+        ImVec2 size = ImVec2(asset->image.cols * scale, asset->image.rows * scale);
+
+        ImGui::SetCursorPos(ImVec2((width - size.x) / 2, (height - size.y) / 2));
         // ImVec2 size = ImVec2(DISPLAY_WIDTH - 2 * (DISPLAY_WIDTH / 5) - 20, DISPLAY_HEIGHT - 60);
         ImGui::Image((ImTextureID)asset->SDL_texture, size);
     } else {
@@ -116,8 +125,31 @@ bool WindowManager::endVirtualWindow() {
     return true;
 }
 
+void WindowManager::command_panel(std::pair<std::string, int> command) {
+    auto it = WindowManager::panel_map.find(command.first);
+
+    if (it == WindowManager::panel_map.end()) {
+        return;
+    }
+
+    IPanel *panel = it->second;
+
+    panel->panel_control_flags = command.second;
+}
+
 bool WindowManager::draw() {
-    for(auto &panel: WindowManager::panels) {
+    while (!WindowManager::commands.empty()) {
+        std::pair<std::string, unsigned int> panel = WindowManager::commands.front();
+
+        if (WindowManager::panel_map[panel.first]) {
+            WindowManager::panel_map[panel.first]->panel_control_flags = panel.second;
+        }
+
+        WindowManager::commands.pop();
+    }
+
+    for(size_t i = 0; i < WindowManager::panels.size(); ++i) {
+        auto& panel = WindowManager::panels[i];
         ImGui::SetNextWindowPos(panel->getPosition());
         ImGui::SetNextWindowSize(panel->getSize());
         WindowManager::createVirtualWindow(panel->getName(),
@@ -126,6 +158,8 @@ bool WindowManager::draw() {
         panel->draw();
 
         WindowManager::endVirtualWindow();
+
+        panel->panel_control_flags = 0;
     }
 
     return true;

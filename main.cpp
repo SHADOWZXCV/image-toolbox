@@ -10,16 +10,17 @@ int main() {
         return -1;
     }
 
+    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
+
     if (!Graphics::WindowManager::init_context()) {
         return -1;
     }
 
     bool running = true;
-    SDL_Event event;
     SDL_Texture *imgTexture = nullptr;
     int imgWidth = 0, imgHeight = 0;
 
-    init_display_state(Graphics::WindowManager::window);
+    program::init_display_state(Graphics::WindowManager::window);
 
     // add all panels sto the window manager
     Graphics::WindowManager::register_panel<IMenuBarPanel>();
@@ -28,11 +29,7 @@ int main() {
     // Main loop
     while (running) {
         // Handle SDL events
-        while (SDL_PollEvent(&event)) {
-            ImGui_ImplSDL2_ProcessEvent(&event);
-            if (event.type == SDL_QUIT)
-                running = false;
-        }
+        program::handleSDLEvents(&running);
 
         SDL_Delay(16);
 

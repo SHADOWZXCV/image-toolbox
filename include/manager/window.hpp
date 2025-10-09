@@ -1,6 +1,9 @@
 #pragma once
 #include <vector>
 #include <string>
+#include <algorithm>
+#include <queue>
+#include <utility>
 #include <SDL.h>
 #include <imgui.h>
 #include <backends/imgui_impl_sdl2.h>
@@ -24,28 +27,38 @@ namespace Graphics {
         static SDL_Renderer* renderer;
 
         template<typename TPanel>
-        static bool register_panel() {
+        static IPanel* register_panel() {
             static_assert(std::is_base_of<IPanel, TPanel>::value, "TPanel must inherit IPanel");
-            WindowManager::panels.push_back(std::make_unique<TPanel>());
+            auto panel = std::make_unique<TPanel>();
+            int id = static_cast<int>(WindowManager::panels.size());
+            TPanel* ptr = panel.get();
 
-            return true;
+            WindowManager::panel_map[ptr->name] = ptr;
+            panel->id = id;
+            panels.push_back(std::move(panel));
+
+            return ptr;
         }
+
         static void insert_texture(SDL_Texture *texture);
         static bool init_context();
         static bool start_frame();
         static bool render_frame();
-        static bool renderPreviewImage();
+        static bool renderPreviewImage(float zoom_percentage);
         static bool draw();
         static void setChosenImagePath(std::string filepath);
         static std::string getChosenImagePath();
+        static void command_panel(std::pair<std::string, int> command);
         
         private:
             static std::string imagepath;
             static std::vector<SDL_Texture*> owned_textures;
             static std::vector<Assets> assets;
             static std::vector<std::unique_ptr<IPanel>> panels;
+            static std::unordered_map<std::string, IPanel*> panel_map;
+            static std::queue<std::pair<std::string, unsigned int>> commands;
             
-            static bool createVirtualWindow(const char* name, ImGuiWindowFlags flags);
+            static bool createVirtualWindow(std::string name, ImGuiWindowFlags flags);
             static bool endVirtualWindow();
             static bool cleanup_old_textures();
     }; 

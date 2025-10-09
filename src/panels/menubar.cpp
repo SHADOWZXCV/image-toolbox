@@ -11,6 +11,9 @@ void IMenuBarPanel::draw() {
     if (ImGui::Button("Open")) {
         this->filepath = toolbox::Acquisitor::pick_file(false);
         Graphics::WindowManager::setChosenImagePath(this->filepath);
+
+        // This will reset EVERYTHING ON THAT PANEL next time it renders
+        Graphics::WindowManager::command_panel({ IImagePreviewPanel::name, RESET_ZOOM_FLAG });
     }
     ImGui::SameLine();
     if (ImGui::Button("Save")) {}

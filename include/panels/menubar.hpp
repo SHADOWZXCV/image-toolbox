@@ -3,9 +3,10 @@
 #include "manager/window.hpp"
 #include "acquisitor/acquisitor.hpp"
 #include "shared/state.hpp"
-
+#include "panels/image-preview.hpp"
 struct IMenuBarPanel : public IPanel {
-    char *getName() const override { return name; }
+    unsigned int getID() const override { return id; }
+    std::string getName() const override { return name; }
     ImVec2 getPosition() const override { return position; }
     ImVec2 getSize() const override { return size; }
     ImGuiWindowFlags getImGuiFlags() const override { return imGuiFlags; };
@@ -13,11 +14,11 @@ struct IMenuBarPanel : public IPanel {
 
     char *getFilePath();
 
+    static constexpr const char* name = "MenuBar";
     private:
         // basic properties
-        char* name = "MenuBar";
         ImVec2 position{0, 0};
-        ImVec2 size{(float) DISPLAY_WIDTH, 30};
+        ImVec2 size{(float) program::DISPLAY_WIDTH, 30};
         ImGuiWindowFlags imGuiFlags = 
             ImGuiWindowFlags_NoTitleBar |
             ImGuiWindowFlags_NoMove |
