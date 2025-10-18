@@ -2,6 +2,8 @@
 
 float zoom_percentage = 0.6f;
 
+
+void IImagePreviewPanel::pre_draw() {}
 void IImagePreviewPanel::draw() {
     if (this->panel_control_flags & RESET_ZOOM_FLAG) {
         ImGui::SetScrollX(0.0f);
@@ -21,15 +23,14 @@ void IImagePreviewPanel::handle_events() {
         float scroll = ImGui::GetIO().MouseWheel;
 
         if (scroll > 0) {
-            zoom_percentage += 0.05f;
+            zoom_percentage *= 1.1f;
         } else if (scroll < 0 && zoom_percentage > 0.3f) {
-            zoom_percentage -= 0.05f;
+            zoom_percentage /= 1.1f;
         }
     }
 
     if (isPanelHovered && spaceHeld) {
-        SDL_Cursor* cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_HAND);
-        SDL_SetCursor(cursor);
+        ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
 
         if (ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
             ImVec2 drag_delta = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left);
@@ -41,7 +42,6 @@ void IImagePreviewPanel::handle_events() {
             ImGui::ResetMouseDragDelta(ImGuiMouseButton_Left);
         }
     } else {
-        SDL_Cursor* cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
-        SDL_SetCursor(cursor);
+        ImGui::SetMouseCursor(ImGuiMouseCursor_Arrow);
     }
 }

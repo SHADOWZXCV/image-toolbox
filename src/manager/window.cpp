@@ -5,13 +5,6 @@ using namespace Graphics;
 
 SDL_Window* WindowManager::window;
 SDL_Renderer* WindowManager::renderer;
-std::vector<std::unique_ptr<IPanel>> WindowManager::panels;
-std::vector<SDL_Texture*> WindowManager::owned_textures;
-std::vector<Assets> WindowManager::assets;
-std::queue<std::pair<std::string, unsigned int>> WindowManager::commands;
-std::unordered_map<std::string, IPanel*> WindowManager::panel_map;
-
-std::string WindowManager::imagepath = "../assets/wow_toolbox.png";
 
 bool WindowManager::start_frame() {
     try
@@ -50,11 +43,11 @@ bool WindowManager::render_frame() {
 }
 
 bool WindowManager::cleanup_old_textures() {
-    for(auto asset: WindowManager::assets) {
-        SDL_DestroyTexture(asset.SDL_texture);
+    for(auto asset: program::WindowState::assets) {
+        SDL_DestroyTexture(asset->SDL_texture);
     }
 
-    WindowManager::assets.clear();
+    program::WindowState::assets.clear();
 
     return true;
 }
@@ -66,37 +59,25 @@ bool WindowManager::createVirtualWindow(std::string name, ImGuiWindowFlags flags
 }
 
 bool WindowManager::renderPreviewImage(float zoom_percentage) {
-    std::string path = WindowManager::getChosenImagePath();
+    toolbox::Asset *asset = program::WindowState::currentAsset;
 
-    if (path.empty()) {
+    if (!asset) {
         ImGui::Text("No image is selected");
 
         return false;
     }
 
-    Assets *asset = nullptr;
-
-    for (auto &stored_asset: assets) {
-        if (stored_asset.path == path) {
-            asset = &stored_asset;
-            break;
-        }
-    }
-
-    if (!asset) {
+    if (program::WindowState::newAsset) {
         cleanup_old_textures();
-        WindowManager::assets.clear();
+        program::WindowState::assets.clear();
 
-        toolbox::ImageRenderer renderer = toolbox::ImageRenderer::buildSDLRenderer(WindowManager::renderer, path);
+        toolbox::ImageRenderer::buildSDLTexture(WindowManager::renderer, asset);
 
-        Assets newAsset;
-        newAsset.path = path;
-        newAsset.image = renderer.cv_image;
-        newAsset.SDL_texture = renderer.image_texture;
-
-        WindowManager::assets.push_back(newAsset);
-
-        asset = &WindowManager::assets.back();
+        program::WindowState::assets.push_back(asset);
+        ImGui::SetScrollX(0.0f);
+        ImGui::SetScrollY(0.0f);
+        zoom_percentage = 0.6f;
+        program::WindowState::newAsset = false;
     }
 
     if (asset->SDL_texture) {
@@ -126,9 +107,9 @@ bool WindowManager::endVirtualWindow() {
 }
 
 void WindowManager::command_panel(std::pair<std::string, int> command) {
-    auto it = WindowManager::panel_map.find(command.first);
+    auto it = program::WindowState::panel_map.find(command.first);
 
-    if (it == WindowManager::panel_map.end()) {
+    if (it == program::WindowState::panel_map.end()) {
         return;
     }
 
@@ -138,23 +119,26 @@ void WindowManager::command_panel(std::pair<std::string, int> command) {
 }
 
 bool WindowManager::draw() {
-    while (!WindowManager::commands.empty()) {
-        std::pair<std::string, unsigned int> panel = WindowManager::commands.front();
+    while (!program::WindowState::commands.empty()) {
+        std::pair<std::string, unsigned int> panel = program::WindowState::commands.front();
 
-        if (WindowManager::panel_map[panel.first]) {
-            WindowManager::panel_map[panel.first]->panel_control_flags = panel.second;
+        if (program::WindowState::panel_map[panel.first]) {
+            program::WindowState::panel_map[panel.first]->panel_control_flags = panel.second;
         }
 
-        WindowManager::commands.pop();
+        program::WindowState::commands.pop();
     }
 
-    for(size_t i = 0; i < WindowManager::panels.size(); ++i) {
-        auto& panel = WindowManager::panels[i];
-        ImGui::SetNextWindowPos(panel->getPosition());
-        ImGui::SetNextWindowSize(panel->getSize());
+    for(size_t i = 0; i < program::WindowState::panels.size(); ++i) {
+        auto& panel = program::WindowState::panels[i];
+        ImGui::SetNextWindowPos(panel->getPosition(), ImGuiCond_Once);
+        ImGui::SetNextWindowSize(panel->getSize(), ImGuiCond_Once);
+
+        panel->pre_draw();
+        
         WindowManager::createVirtualWindow(panel->getName(),
         panel->getImGuiFlags());
-
+        
         panel->draw();
 
         WindowManager::endVirtualWindow();
@@ -163,14 +147,6 @@ bool WindowManager::draw() {
     }
 
     return true;
-}
-
-void WindowManager::setChosenImagePath(std::string filepath) {
-    WindowManager::imagepath = filepath;
-}
-
-std::string WindowManager::getChosenImagePath() {
-    return WindowManager::imagepath;
 }
 
 bool WindowManager::init_context() {

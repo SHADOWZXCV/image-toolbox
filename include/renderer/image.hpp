@@ -2,6 +2,7 @@
 #include <string>
 #include <opencv2/opencv.hpp>
 #include <SDL.h>
+#include "acquisitor/acquisitor.hpp"
 
 typedef cv::Mat ExplodedOpenCVMatrix;
 namespace toolbox {
@@ -10,7 +11,7 @@ namespace toolbox {
             cv::Mat cv_image;
             SDL_Texture *image_texture;
         
-            static ImageRenderer buildSDLRenderer(SDL_Renderer *SDL_renderer, std::string path);
+            static SDL_Texture *buildSDLTexture(SDL_Renderer *SDL_renderer, toolbox::Asset *asset);
             ExplodedOpenCVMatrix *explode_image();
             bool load_image(const char* path);
     };

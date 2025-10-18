@@ -1,5 +1,8 @@
 #include "panels/menubar.hpp"
 
+void IMenuBarPanel::pre_draw() {}
+void IMenuBarPanel::handle_events() {}
+
 void IMenuBarPanel::draw() {
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0,0,0,0));
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.2f,0.2f,0.2f,0.2f));
@@ -9,11 +12,16 @@ void IMenuBarPanel::draw() {
 
     // Horizontal buttons
     if (ImGui::Button("Open")) {
-        this->filepath = toolbox::Acquisitor::pick_file(false);
-        Graphics::WindowManager::setChosenImagePath(this->filepath);
+        toolbox::Asset *asset = toolbox::Acquisitor::pick_image(false);
 
-        // This will reset EVERYTHING ON THAT PANEL next time it renders
-        Graphics::WindowManager::command_panel({ IImagePreviewPanel::name, RESET_ZOOM_FLAG });
+        if (asset) {
+            program::WindowState::assets.push_back(asset);
+            program::WindowState::currentAsset = asset;
+            program::WindowState::newAsset = true;
+    
+            // This will reset EVERYTHING ON THAT PANEL next time it renders
+            Graphics::WindowManager::command_panel({ IImagePreviewPanel::name, RESET_ZOOM_FLAG });
+        }
     }
     ImGui::SameLine();
     if (ImGui::Button("Save")) {}

@@ -1,7 +1,10 @@
 #include <iostream>
 #include "manager/window.hpp"
+#include "manager/state.hpp"
+#include "services/acquisitor.hpp"
 #include "panels/menubar.hpp"
 #include "panels/image-preview.hpp"
+#include "panels/assets.hpp"
 
 int main() {
     // Initialize SDL
@@ -25,6 +28,9 @@ int main() {
     // add all panels sto the window manager
     Graphics::WindowManager::register_panel<IMenuBarPanel>();
     Graphics::WindowManager::register_panel<IImagePreviewPanel>();
+    Graphics::WindowManager::register_panel<IAssetsPanel>();
+    
+    program::ServiceManager::registerService<program::IAcquisitorService>();
 
     // Main loop
     while (running) {
