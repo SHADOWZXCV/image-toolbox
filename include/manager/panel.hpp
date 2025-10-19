@@ -17,6 +17,7 @@ struct IPanel {
     virtual ImVec2 getSize() const = 0;
     virtual ImGuiWindowFlags getImGuiFlags() const = 0;
 
+    virtual bool show_condition() = 0;
     virtual void pre_draw() = 0;
     virtual void draw() = 0;
     virtual void handle_events() = 0;

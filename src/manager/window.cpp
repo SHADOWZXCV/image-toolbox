@@ -6,6 +6,28 @@ using namespace Graphics;
 SDL_Window* WindowManager::window;
 SDL_Renderer* WindowManager::renderer;
 
+void Graphics::load_fonts() {
+    ImGuiIO& io = ImGui::GetIO();
+    (void)io;
+
+    // 1. Load your main font
+    float baseFontSize = 16.0f;
+    io.Fonts->AddFontFromFileTTF("include/assets/Roboto-Regular.ttf", baseFontSize);
+
+    float iconFontSize = baseFontSize; // Icons are often bigger than letters, so scale down
+    ImFontConfig config;
+    config.MergeMode = true; // This is the important part!
+    config.PixelSnapH = true;
+    config.GlyphMinAdvanceX = iconFontSize; // Use if you want to make the icon monospaced
+
+    // This defines the range of unicode characters to grab from the font.
+    // ICON_MIN_FA and ICON_MAX_FA are defined in the header file.
+    static const ImWchar icon_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+
+    io.Fonts->AddFontFromFileTTF("include/assets/fa-solid-900.ttf", iconFontSize, &config, icon_ranges);
+
+}
+
 bool WindowManager::start_frame() {
     try
     {
@@ -131,6 +153,12 @@ bool WindowManager::draw() {
 
     for(size_t i = 0; i < program::WindowState::panels.size(); ++i) {
         auto& panel = program::WindowState::panels[i];
+
+        bool show = panel->show_condition();
+
+        if (!show)
+            continue;
+
         ImGui::SetNextWindowPos(panel->getPosition(), ImGuiCond_Once);
         ImGui::SetNextWindowSize(panel->getSize(), ImGuiCond_Once);
 

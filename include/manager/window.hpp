@@ -10,12 +10,15 @@
 #include <backends/imgui_impl_sdlrenderer2.h>
 #include <iostream>
 #include <vector>
+#include "fontawesome/IconsFontAwesome6.h"
 #include "renderer/image.hpp"
 #include "manager/panel.hpp"
 #include "shared/state.hpp"
 #include "acquisitor/acquisitor.hpp"
 
 namespace Graphics {
+
+    extern void load_fonts();
     class WindowManager {
         public:
         static SDL_Window* window;

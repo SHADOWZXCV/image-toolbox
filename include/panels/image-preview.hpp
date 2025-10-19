@@ -21,6 +21,7 @@ struct IImagePreviewPanel : public IPanel {
     void pre_draw() override;
     void draw() override;
     void handle_events() override;
+    bool show_condition() override;
 
     static constexpr const char* name = "Image Preview";
     private:

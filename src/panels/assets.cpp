@@ -1,6 +1,17 @@
 #include "panels/assets.hpp"
 
 void IAssetsPanel::pre_draw() {}
+bool IAssetsPanel::show_condition() {
+    // TODO: Reserve names in an internal state
+    program::IAcquisitorService* acquisitor = static_cast<program::IAcquisitorService*>(program::ServiceManager::getByName("acquisitor_service"));
+    std::vector<toolbox::Asset *> *assets = acquisitor->getAssets();
+
+    if (assets->empty()) {
+        return false;
+    }
+
+    return true;
+}
 void IAssetsPanel::handle_events() {
     this->restrictWindowSize();
 }
@@ -32,28 +43,40 @@ void IAssetsPanel::restrictWindowSize() {
 
 void IAssetsPanel::draw() {
     this->handle_events();
-    ImVec2 currPosition = ImGui::GetWindowPos();
-    ImVec2 currSize = ImGui::GetWindowSize();
-
-    // Display window position and size information
-    // ImGui::BeginChild("Window Info", ImVec2(currSize.x, 130));
-    // ImGui::Text("Current Position: (%.1f, %.1f)", currPosition.x, currPosition.y);
-    // ImGui::Text("Current Size: (%.1f, %.1f)", currSize.x, currSize.y);
-    // ImGui::Text("Previous Position: (%.1f, %.1f)", this->prevPosition.x, this->prevPosition.y);
-    // ImGui::Text("Previous Size: (%.1f, %.1f)", this->prevSize.x, this->prevSize.y);
-    // ImGui::EndChild();
-
 
     ImGui::SeparatorText("Layers");
-
+    // TODO: Reserve names in an internal state
     program::IAcquisitorService* acquisitor = static_cast<program::IAcquisitorService*>(program::ServiceManager::getByName("acquisitor_service"));
     std::vector<toolbox::Asset *> *assets = acquisitor->getAssets();
+    ImVec2 currSize = ImGui::GetWindowSize();
     for(short i = 0; i < (*assets).size(); i++) {
         toolbox::Asset *asset = (*assets)[i];
+        std::string asset_name;
+        size_t asset_name_pos = asset->path.rfind("\\");
+
+        if (asset_name_pos != std::string::npos) {
+            asset_name = asset->path.substr(asset_name_pos + 1);
+        } else {
+            asset_name = asset->path;
+        }
 
         if (asset) {
-            ImGui::BeginChild(asset->path.c_str(), ImVec2(this->size.x - 10, 80), ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_Borders);
-            ImGui::Text(asset->path.c_str());
+            // ImVec2(currSize.x -  10, 90)
+            ImGui::BeginChild(asset->path.c_str(), ImVec2(), ImGuiChildFlags_AlwaysAutoResize | ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_Borders, ImGuiWindowFlags_HorizontalScrollbar);
+            ImGui::Text(asset_name.c_str());
+
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::BeginTooltip();
+
+                // ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f); // Optional: wrap long text
+                ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.6f), asset->path.c_str());
+                // ImGui::PopTextWrapPos();
+
+                // 5. End the tooltip window
+                ImGui::EndTooltip();
+            }
+
             ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.6f), "Size: %dx%d", asset->image.cols, asset->image.rows);
             ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.6f), "Channels: %d", asset->image.channels());
             ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.6f), "Depth: %d", asset->image.depth());

@@ -10,12 +10,13 @@
 struct IAssetsPanel : public IPanel {
     unsigned int getID() const override { return id; }
     std::string getName() const override { return name; }
-    ImVec2 getPosition() const override { return resizedPosition; }
-    ImVec2 getSize() const override { return resizedSize; }
+    ImVec2 getPosition() const override { return position; }
+    ImVec2 getSize() const override { return size; }
     ImGuiWindowFlags getImGuiFlags() const override { return imGuiFlags; };
     void pre_draw() override;
     void draw() override;
     void handle_events() override;
+    bool show_condition() override;
 
     char *getFilePath();
 
@@ -30,10 +31,6 @@ struct IAssetsPanel : public IPanel {
             ImGuiWindowFlags_NoScrollbar;
     
         // state
-        ImVec2 resizedPosition = position;
-        ImVec2 resizedSize = size;
-        ImVec2 prevPosition = position;
-        ImVec2 prevSize = size;
 
         // functions
         void restrictWindowSize();

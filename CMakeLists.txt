@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.10)
 project(toolbox LANGUAGES C CXX)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# ---------------- Assets ----------------
+file(COPY ${CMAKE_SOURCE_DIR}/assets/fonts DESTINATION ${CMAKE_BINARY_DIR}/include)
+
 # ---------------- ImGui ----------------
 set(IMGUI_DIR ${CMAKE_SOURCE_DIR}/external/imgui)
 set(IMGUI_SOURCES

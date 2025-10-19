@@ -5,6 +5,7 @@
 #include "panels/menubar.hpp"
 #include "panels/image-preview.hpp"
 #include "panels/assets.hpp"
+#include "panels/tools.hpp"
 
 int main() {
     // Initialize SDL
@@ -29,8 +30,11 @@ int main() {
     Graphics::WindowManager::register_panel<IMenuBarPanel>();
     Graphics::WindowManager::register_panel<IImagePreviewPanel>();
     Graphics::WindowManager::register_panel<IAssetsPanel>();
+    Graphics::WindowManager::register_panel<IToolsPanel>();
     
     program::ServiceManager::registerService<program::IAcquisitorService>();
+
+    Graphics::load_fonts();
 
     // Main loop
     while (running) {

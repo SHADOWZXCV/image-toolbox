@@ -1,6 +1,9 @@
 #include "panels/menubar.hpp"
 
 void IMenuBarPanel::pre_draw() {}
+bool IMenuBarPanel::show_condition() {
+    return true;
+}
 void IMenuBarPanel::handle_events() {}
 
 void IMenuBarPanel::draw() {

@@ -4,6 +4,9 @@ float zoom_percentage = 0.6f;
 
 
 void IImagePreviewPanel::pre_draw() {}
+bool IImagePreviewPanel::show_condition() {
+    return true;
+}
 void IImagePreviewPanel::draw() {
     if (this->panel_control_flags & RESET_ZOOM_FLAG) {
         ImGui::SetScrollX(0.0f);
