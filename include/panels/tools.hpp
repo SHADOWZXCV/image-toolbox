@@ -7,6 +7,12 @@
 #include "acquisitor/acquisitor.hpp"
 #include "panels/image-preview.hpp"
 #include "shared/state.hpp"
+#include "renderer/processor.hpp"
+#include "renderer/transformations/enhance.hpp"
+
+enum ToolsButtons {
+    EQUALIZE_BUTTON = 0
+};
 
 struct IToolsPanel : public IPanel {
     unsigned int getID() const override { return id; }
@@ -33,7 +39,7 @@ struct IToolsPanel : public IPanel {
             ImGuiWindowFlags_NoResize;
     
         // state
-
+        uint32_t buttonsPressed = 0;
         // functions
         void restrictWindowSize();
 };

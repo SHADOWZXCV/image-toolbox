@@ -13,6 +13,7 @@ namespace program {
     struct WindowState {
         static toolbox::Asset *currentAsset;
         static bool newAsset;
+        static bool textureUpdate;
         static std::vector<SDL_Texture*> owned_textures;
         static std::vector<toolbox::Asset *> assets;
         static std::vector<std::unique_ptr<IPanel>> panels;

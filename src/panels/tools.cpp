@@ -2,7 +2,11 @@
 
 void IToolsPanel::pre_draw() {}
 void IToolsPanel::handle_events() {
-    // this->restrictWindowSize();
+    if (buttonsPressed & (1 << EQUALIZE_BUTTON)) {
+        program::IAcquisitorService* acquisitor = static_cast<program::IAcquisitorService*>(program::ServiceManager::getByName("acquisitor_service"));
+        toolbox::OpenCVProcessor::process<toolbox::HistogramEqualize>(acquisitor->getLatestAsset()->image);
+        program::WindowState::textureUpdate = true;
+    }
 }
 
 bool IToolsPanel::show_condition() {
@@ -18,8 +22,6 @@ bool IToolsPanel::show_condition() {
 }
 
 void IToolsPanel::draw() {
-    this->handle_events();
-
     ImGui::Separator();
 
     ImGui::PushStyleColor(ImGuiCol_Button,        ImVec4(0.0f, 0.0f, 0.0f, 0.0f)); // Transparent
@@ -27,13 +29,12 @@ void IToolsPanel::draw() {
     ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(0.3f, 0.6f, 0.9f, 0.6f)); // Slightly more opaque blue
     ImGui::PushStyleColor(ImGuiCol_Border,        ImVec4(0.8f, 0.8f, 0.8f, 0.5f)); // Light gray border
 
-    // 2. Style Variables
-    //    - Add a border
-    //    - Make it slightly rounded for a "cute" look
     ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 5.0f);
 
-    ImGui::Button(ICON_FA_ARROW_POINTER, ImVec2(this->size.x - 20, this->size.x - 20));
+    buttonsPressed = 0;
+    buttonsPressed |= ImGui::Button(ICON_FA_CHART_LINE, ImVec2(this->size.x - 20, this->size.x - 20)) << EQUALIZE_BUTTON;
+
     ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Add 10 pixels of vertical space between buttons
     ImGui::Button(ICON_FA_FIRE_FLAME_CURVED, ImVec2(this->size.x - 20, this->size.x - 20));
 
@@ -45,5 +46,5 @@ void IToolsPanel::draw() {
 
     ImGui::PopStyleColor(4);
     ImGui::PopStyleVar(2);
-
+    this->handle_events();
 }

@@ -30,6 +30,9 @@ toolbox::Asset *Acquisitor::load_image(char *path) {
             throw std::runtime_error("Image is not loaded from this path: " + std::string(path));
         }
 
+        // Set it to grey
+        toolbox::OpenCVProcessor::process<toolbox::GreyTransformation>(image);
+
         std::unique_ptr<Asset> asset = std::make_unique<Asset>();
         asset->image = image;
         asset->path = path;

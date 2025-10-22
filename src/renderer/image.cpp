@@ -21,8 +21,21 @@ SDL_Texture* ImageRenderer::buildSDLTexture(SDL_Renderer *SDL_renderer, toolbox:
     int channels = image->channels();
     Uint32 pixel_format;
 
-    if (channels == 1)
-        pixel_format = SDL_PIXELFORMAT_RGB24;  // grayscale as 24-bit RGB
+    cv::Mat temp;
+    void* pixelData = (void*)image->data;
+    int pitch = static_cast<int>(image->step);
+    int bitsPerPixel = channels * 8;
+
+    if (channels == 1) {
+        cv::Mat grayImage(image->rows, image->cols, CV_8UC1, (void*)image->data, image->step);
+        
+        cv::cvtColor(grayImage, temp, cv::COLOR_GRAY2BGR);
+        
+        pixel_format = SDL_PIXELFORMAT_BGR24;
+        pixelData = (void*)temp.data;
+        pitch = static_cast<int>(temp.step);
+        bitsPerPixel = temp.channels() * 8;
+    }
     else if (channels == 3)
         pixel_format = SDL_PIXELFORMAT_BGR24;  // OpenCV stores 3-channel as BGR
     else if (channels == 4)
@@ -33,13 +46,12 @@ SDL_Texture* ImageRenderer::buildSDLTexture(SDL_Renderer *SDL_renderer, toolbox:
         return nullptr;
     }
 
-    // Note: For BGR/BGRA, OpenCV stores in memory exactly like SDL expects, no conversion needed
     SDL_Surface* surface = SDL_CreateRGBSurfaceWithFormatFrom(
-        (void*)image->data,
+        pixelData,
         image->cols,
         image->rows,
-        channels * 8,
-        static_cast<int>(image->step),
+        bitsPerPixel,
+        pitch,
         pixel_format
     );
 

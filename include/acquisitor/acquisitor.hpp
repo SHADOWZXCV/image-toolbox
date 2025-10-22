@@ -8,6 +8,8 @@ extern "C" {
 
 #include "manager/panel.hpp"
 #include "manager/state.hpp"
+#include "renderer/processor.hpp"
+#include "renderer/transformations/color.hpp"
 
 namespace toolbox {
     struct Asset {

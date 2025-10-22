@@ -6,6 +6,7 @@
 #include "acquisitor/acquisitor.hpp"
 #include "panels/image-preview.hpp"
 #include "shared/state.hpp"
+#include "implot.h"
 
 struct IAssetsPanel : public IPanel {
     unsigned int getID() const override { return id; }

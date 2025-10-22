@@ -84,16 +84,64 @@ void IAssetsPanel::draw() {
             ImGui::EndChild();
         }
     }
-    //     ImGui::SeparatorText("Layers");
 
-    // // Get the current preview image's properties
-    // program::IAcquisitorService* acquisitor = static_cast<program::IAcquisitorService*>(program::ServiceManager::getByName("acquisitor_service"));
-    // toolbox::Asset *asset = acquisitor->getLatestAsset();
+    // Histogram
+    toolbox::Asset *asset = (*assets)[0];
+    cv::Mat hist;
+    float range[] = { 0, 256 }; // The upper boundary is non-inclusive
+    const float* histRange[] = { range };
+    int channels[] = { 0 };
+    int histSize[] = { 256 };
+    cv::calcHist(
+        &asset->image,
+        1,
+        channels,
+        cv::Mat(),
+        hist,
+        1,
+        histSize,
+        histRange,
+        true,
+        false
+    );
 
-    // if (asset) {
-    //     ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.6f), "Size: %dx%d", asset->image.cols, asset->image.rows);
-    //     ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.6f), "Channels: %d", asset->image.channels());
-    //     ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.6f), "Depth: %d", asset->image.depth());
-    //     ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.6f), "Total size in bytes: %d", asset->image.total());
-    // }
+    double max_val = 0.0;
+    // cv::minMaxLoc(hist, 0, &max_val, 0, 0);
+
+    // ImGui::PlotHistogram(
+    //     "Histogram",
+    //     (float*)hist.data,
+    //     histSize[0],
+    //     0,
+    //     NULL,
+    //     0.0f,
+    //     (float)max_val,
+    //     ImVec2(0, 80)
+    // );
+
+    // ImGui::SeparatorText("Image details");
+
+    ImU32 plot_area_color = IM_COL32(20, 20, 20, 255); // Dark grey for the plot
+    ImU32 frame_color = IM_COL32(30, 30, 30, 0); // Lighter grey for the frame
+
+    // 2. Push the colors
+    ImPlot::PushStyleColor(ImPlotCol_PlotBg, plot_area_color);
+    ImPlot::PushStyleColor(ImPlotCol_FrameBg, frame_color);
+    ImPlot::PushStyleColor(ImPlotCol_AxisBgHovered, plot_area_color);
+
+    float *histogram_data = (float *) hist.data;
+    int hist_size = hist.rows;
+
+    ImVec2 plot_size = ImVec2(ImGui::GetContentRegionAvail().x, 250.0f);
+
+    if (ImPlot::BeginPlot("#Image histogram", plot_size)) {
+        ImPlot::SetupAxes("Intensity", "Count");
+
+        ImPlot::PlotBars("Pixel counts", histogram_data, hist_size, 0.7, 0.0);
+
+        ImPlot::EndPlot();
+    }
+
+    ImPlot::PopStyleColor();
+    ImPlot::PopStyleColor();
 }

@@ -10,6 +10,7 @@ std::queue<std::pair<std::string, unsigned int>> program::WindowState::commands;
 std::unordered_map<std::string, IPanel*> program::WindowState::panel_map;
 
 bool program::WindowState::newAsset = false;
+bool program::WindowState::textureUpdate = false;
 toolbox::Asset *program::WindowState::currentAsset = nullptr;
 
 void program::init_display_state(SDL_Window *window) {

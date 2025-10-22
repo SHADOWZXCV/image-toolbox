@@ -89,7 +89,7 @@ bool WindowManager::renderPreviewImage(float zoom_percentage) {
         return false;
     }
 
-    if (program::WindowState::newAsset) {
+    if (program::WindowState::newAsset || program::WindowState::textureUpdate) {
         cleanup_old_textures();
         program::WindowState::assets.clear();
 
@@ -100,6 +100,7 @@ bool WindowManager::renderPreviewImage(float zoom_percentage) {
         ImGui::SetScrollY(0.0f);
         zoom_percentage = 0.6f;
         program::WindowState::newAsset = false;
+        program::WindowState::textureUpdate = false;
     }
 
     if (asset->SDL_texture) {
@@ -206,6 +207,7 @@ bool WindowManager::init_context() {
     // Setup ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
+    ImPlot::CreateContext();
 
     // Setup ImGui SDL2/Renderer bindings
     ImGui_ImplSDL2_InitForSDLRenderer(WindowManager::window, WindowManager::renderer);

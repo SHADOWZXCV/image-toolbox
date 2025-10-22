@@ -15,6 +15,7 @@
 #include "manager/panel.hpp"
 #include "shared/state.hpp"
 #include "acquisitor/acquisitor.hpp"
+#include <implot.h>
 
 namespace Graphics {
 

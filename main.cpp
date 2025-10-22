@@ -52,6 +52,7 @@ int main() {
     ImGui_ImplSDLRenderer2_Shutdown();
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
+    ImPlot::DestroyContext();
 
     SDL_DestroyRenderer(Graphics::WindowManager::renderer);
     SDL_DestroyWindow(Graphics::WindowManager::window);
