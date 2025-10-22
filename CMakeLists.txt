@@ -15,6 +15,11 @@ set(IMGUI_SOURCES
     ${IMGUI_DIR}/backends/imgui_impl_sdl2.cpp
     ${IMGUI_DIR}/backends/imgui_impl_sdlrenderer2.cpp
 )
+# ---------------- ImPlot ----------------
+set(IMPLOT_DIR ${CMAKE_SOURCE_DIR}/external/implot)
+file(GLOB IMPLOT_SOURCES
+    ${IMPLOT_DIR}/*.cpp
+)
 
 # ---------------- TinyFileDialogs ----------------
 set(TINY_DIALOG_DIR ${CMAKE_SOURCE_DIR}/external//libtinyfiledialogs)
@@ -39,7 +44,7 @@ include_directories(${SDL2_IMAGE_INCLUDE_DIR})
 # ---------------- Executable ----------------
 file(GLOB_RECURSE SRC_FILES "${CMAKE_SOURCE_DIR}/src/*.cpp")
 
-add_executable(toolbox main.cpp ${SRC_FILES} ${IMGUI_SOURCES})
+add_executable(toolbox main.cpp ${SRC_FILES} ${IMGUI_SOURCES} ${IMPLOT_SOURCES})
 
 target_compile_definitions(toolbox PRIVATE SDL_MAIN_HANDLED)
 
@@ -49,6 +54,7 @@ target_include_directories(toolbox PRIVATE
     ${SDL2_IMAGE_INCLUDE_DIR}
     ${IMGUI_DIR}
     ${IMGUI_DIR}/backends
+    ${IMPLOT_DIR}
     ${TINY_DIALOG_DIR}
     ${OpenCV_INCLUDE_DIR}
 )
