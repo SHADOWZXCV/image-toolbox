@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include <string>
 #include <memory>
+#include <typeindex>
 #include "acquisitor/acquisitor.hpp"
 
 namespace program {
@@ -10,17 +11,25 @@ namespace program {
     };
 
     struct ServiceManager {
-        static std::unordered_map<std::string, std::unique_ptr<IService>> services;
+        static std::unordered_map<std::type_index, std::shared_ptr<IService>> services;
 
         template <typename TService>
         static void registerService() {
             static_assert(std::is_base_of<IService, TService>::value, "BAD SERVICE! TService must inherit IService");
-            std::unique_ptr<TService> service = std::make_unique<TService>();
+            std::shared_ptr<TService> service = std::make_shared<TService>();
 
-            ServiceManager::services[service->name] = std::move(service);
+            ServiceManager::services[std::type_index(typeid(TService))] = std::move(service);
         }
 
-        static bool init();
-        static IService *getByName(std::string name);
+        template <typename TService>
+        static std::shared_ptr<TService> get() {
+            auto it = ServiceManager::services.find(std::type_index(typeid(TService)));
+
+            if (it == ServiceManager::services.end()) {
+                return nullptr;
+            }
+            
+            return std::static_pointer_cast<TService>(it->second);
+        }
     };
 }

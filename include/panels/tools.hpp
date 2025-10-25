@@ -6,12 +6,13 @@
 #include "services/acquisitor.hpp"
 #include "acquisitor/acquisitor.hpp"
 #include "panels/image-preview.hpp"
-#include "shared/state.hpp"
 #include "renderer/processor.hpp"
 #include "renderer/transformations/enhance.hpp"
+#include "renderer/transformations/geometric.hpp"
 
 enum ToolsButtons {
-    EQUALIZE_BUTTON = 0
+    EQUALIZE_BUTTON = 0,
+    GEO_TRANSFORMATION_BUTTON = 1
 };
 
 struct IToolsPanel : public IPanel {
@@ -25,7 +26,7 @@ struct IToolsPanel : public IPanel {
     void handle_events() override;
     bool show_condition() override;
 
-    char *getFilePath();
+    bool buttonPressed(enum ToolsButtons BUTTON);
 
     static constexpr const char* name = "Tools";
     private:
@@ -40,6 +41,16 @@ struct IToolsPanel : public IPanel {
     
         // state
         uint32_t buttonsPressed = 0;
+        float transformation_x = 0.0f;
+        float transformation_y = 0.0f;
+        float prev_transformation_x = 0.0f;
+        float prev_transformation_y = 0.0f;
+        bool slider_transform_x_changed = false;
+        bool slider_transform_y_changed = false;
+        bool popup_geo_transform_open = false;
+        std::shared_ptr<program::IAcquisitorService> acquisitor = program::ServiceManager::get<program::IAcquisitorService>();
+        std::weak_ptr<toolbox::Asset> assetPtr;
+
         // functions
         void restrictWindowSize();
 };

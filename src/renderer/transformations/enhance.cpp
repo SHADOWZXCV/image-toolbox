@@ -1,7 +1,5 @@
 #include "renderer/transformations/enhance.hpp"
 
-cv::Mat toolbox::HistogramEqualize::apply(cv::Mat &mat) {
-    cv::equalizeHist(mat, mat);
-
-    return mat;
+void toolbox::HistogramEqualize::apply(toolbox::Asset &asset) {
+    cv::equalizeHist(asset.original_image, asset.original_image);
 }

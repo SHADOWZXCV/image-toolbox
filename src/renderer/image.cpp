@@ -15,8 +15,9 @@ ExplodedOpenCVMatrix *ImageRenderer::explode_image() {
     return &this->cv_image;
 }
 
-SDL_Texture* ImageRenderer::buildSDLTexture(SDL_Renderer *SDL_renderer, toolbox::Asset *asset) {
-    ExplodedOpenCVMatrix *image = &asset->image;
+SDL_Texture* ImageRenderer::buildSDLTexture(SDL_Renderer *SDL_renderer, toolbox::Asset &asset) {
+    toolbox::OpenCVProcessor::buildFinalImageFromAsset(asset);
+    cv::Mat *image = &asset.displayed_image;
 
     int channels = image->channels();
     Uint32 pixel_format;
@@ -65,7 +66,7 @@ SDL_Texture* ImageRenderer::buildSDLTexture(SDL_Renderer *SDL_renderer, toolbox:
 
     SDL_FreeSurface(surface);
 
-    asset->SDL_texture = texture;
+    asset.SDL_texture = texture;
 
     return texture;
 }

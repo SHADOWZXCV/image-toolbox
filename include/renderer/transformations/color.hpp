@@ -3,6 +3,6 @@
 
 namespace toolbox {
     struct GreyTransformation: public Transformation {
-        cv::Mat apply(cv::Mat&) override;
+        void apply(toolbox::Asset&) override;
     };
 }

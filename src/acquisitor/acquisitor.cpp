@@ -1,23 +1,25 @@
 #pragma once
 #include "acquisitor/acquisitor.hpp"
+#include "renderer/processor.hpp"
+#include "renderer/transformations/color.hpp"
 
 using namespace toolbox;
 
-std::unordered_map<std::string, std::unique_ptr<toolbox::Asset>> Acquisitor::assets;
+std::unordered_map<std::string, std::shared_ptr<toolbox::Asset>> Acquisitor::assets;
 
-toolbox::Asset *Acquisitor::pick_image(bool multiple, std::vector<const char*> filters) {
+std::shared_ptr<toolbox::Asset> Acquisitor::pick_image(bool multiple, std::vector<const char*> filters) {
     const char* filter_array[] = {
         "*.jpg", "*.jpeg", "*.png", "*.bmp", "*.tiff", "*.tif", 
         "*.webp", "*.jp2", "*.pbm", "*.pgm", "*.ppm", "*.pxm", "*.pnm",
         "*.sr", "*.ras", "*.exr", "*.hdr", "*.gif", NULL
     };
     const char *path = const_cast<char *>(tinyfd_openFileDialog("Choose image", "", 2, filter_array, "image files", (int) multiple));
-    toolbox::Asset *asset = Acquisitor::load_image(const_cast<char *>(path));
+    std::shared_ptr<Asset> asset = Acquisitor::load_image(const_cast<char *>(path));
 
     return asset;
 }
 
-toolbox::Asset *Acquisitor::load_image(char *path) {
+std::shared_ptr<toolbox::Asset> Acquisitor::load_image(char *path) {
     try
     {
         if (path == nullptr) {
@@ -30,16 +32,17 @@ toolbox::Asset *Acquisitor::load_image(char *path) {
             throw std::runtime_error("Image is not loaded from this path: " + std::string(path));
         }
 
-        // Set it to grey
-        toolbox::OpenCVProcessor::process<toolbox::GreyTransformation>(image);
-
-        std::unique_ptr<Asset> asset = std::make_unique<Asset>();
-        asset->image = image;
+        std::shared_ptr<Asset> asset = std::make_shared<Asset>();
+        asset->setOriginalImage(image);
+        asset->displayed_image = image;
         asset->path = path;
 
         Acquisitor::assets[path] = std::move(asset);
 
-        return Acquisitor::assets[path].get();
+        // Set it to grey
+        toolbox::OpenCVProcessor::process<toolbox::GreyTransformation>(*Acquisitor::assets[path].get());
+
+        return Acquisitor::assets[path];
     }
     catch(const std::exception& e)
     {

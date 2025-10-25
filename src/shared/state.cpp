@@ -5,25 +5,25 @@ SDL_Event program::event;
 int program::DISPLAY_WIDTH, program::DISPLAY_HEIGHT;
 std::vector<std::unique_ptr<IPanel>> program::WindowState::panels;
 std::vector<SDL_Texture*> program::WindowState::owned_textures;
-std::vector<toolbox::Asset *> program::WindowState::assets;
+std::vector<std::weak_ptr<toolbox::Asset>> program::WindowState::assets;
 std::queue<std::pair<std::string, unsigned int>> program::WindowState::commands;
 std::unordered_map<std::string, IPanel*> program::WindowState::panel_map;
 
 bool program::WindowState::newAsset = false;
 bool program::WindowState::textureUpdate = false;
-toolbox::Asset *program::WindowState::currentAsset = nullptr;
+std::weak_ptr<toolbox::Asset> program::WindowState::currentAsset;
 
 void program::init_display_state(SDL_Window *window) {
     SDL_GetWindowSize(window, &DISPLAY_WIDTH, &DISPLAY_HEIGHT);
 }
 
-void setChosenAsset(toolbox::Asset *asset) {
+void program::setChosenAsset(std::shared_ptr<toolbox::Asset> asset) {
     program::WindowState::currentAsset = asset;
     program::WindowState::newAsset = true;
 }
 
-toolbox::Asset *getChosenAsset() {
-    return program::WindowState::currentAsset;
+std::shared_ptr<toolbox::Asset> program::getChosenAsset() {
+    return program::WindowState::currentAsset.lock();
 }
 
 void program::handleSDLEvents(bool *running) {
@@ -34,10 +34,10 @@ void program::handleSDLEvents(bool *running) {
         
         if (event.type == SDL_DROPFILE) {
             char* droppedFilePath = event.drop.file;
-            toolbox::Asset *asset = toolbox::Acquisitor::load_image(droppedFilePath);
+            std::shared_ptr<toolbox::Asset> asset = toolbox::Acquisitor::load_image(droppedFilePath);
 
             if (asset) {
-                setChosenAsset(asset);
+                setChosenAsset(std::move(asset));
             }
         }
     }

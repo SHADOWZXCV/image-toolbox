@@ -15,13 +15,10 @@ void IMenuBarPanel::draw() {
 
     // Horizontal buttons
     if (ImGui::Button("Open")) {
-        toolbox::Asset *asset = toolbox::Acquisitor::pick_image(false);
+        std::shared_ptr<toolbox::Asset> asset = toolbox::Acquisitor::pick_image(false);
 
         if (asset) {
-            program::WindowState::assets.push_back(asset);
-            program::WindowState::currentAsset = asset;
-            program::WindowState::newAsset = true;
-    
+            program::setChosenAsset(asset);
             // This will reset EVERYTHING ON THAT PANEL next time it renders
             Graphics::WindowManager::command_panel({ IImagePreviewPanel::name, RESET_ZOOM_FLAG });
         }

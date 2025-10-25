@@ -53,6 +53,6 @@ namespace Graphics {
             
             static bool createVirtualWindow(std::string name, ImGuiWindowFlags flags);
             static bool endVirtualWindow();
-            static bool cleanup_old_textures();
+            static bool cleanup_old_textures(toolbox::Asset &asset);
     }; 
 }

@@ -3,10 +3,10 @@
 
 namespace toolbox {
     struct HistogramEqualize: public Transformation {
-        cv::Mat apply(cv::Mat&) override;
+        void apply(toolbox::Asset&) override;
     };
 
     struct ContrastStretch: public Transformation {
-        cv::Mat apply(cv::Mat&) override;
+        void apply(toolbox::Asset&) override;
     };
 }

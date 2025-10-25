@@ -64,14 +64,14 @@ bool WindowManager::render_frame() {
     }
 }
 
-bool WindowManager::cleanup_old_textures() {
-    for(auto asset: program::WindowState::assets) {
-        SDL_DestroyTexture(asset->SDL_texture);
+bool WindowManager::cleanup_old_textures(toolbox::Asset &asset) {
+    if (asset.SDL_texture) {
+        SDL_DestroyTexture(asset.SDL_texture);
+        asset.SDL_texture = nullptr;
+        return true;
     }
 
-    program::WindowState::assets.clear();
-
-    return true;
+    return false;
 }
 
 bool WindowManager::createVirtualWindow(std::string name, ImGuiWindowFlags flags) {
@@ -81,26 +81,48 @@ bool WindowManager::createVirtualWindow(std::string name, ImGuiWindowFlags flags
 }
 
 bool WindowManager::renderPreviewImage(float zoom_percentage) {
-    toolbox::Asset *asset = program::WindowState::currentAsset;
+    std::shared_ptr<toolbox::Asset> asset = program::getChosenAsset();
 
-    if (!asset) {
+    if (asset == nullptr) {
         ImGui::Text("No image is selected");
 
         return false;
     }
 
     if (program::WindowState::newAsset || program::WindowState::textureUpdate) {
-        cleanup_old_textures();
-        program::WindowState::assets.clear();
+        if (program::WindowState::textureUpdate) {
+            cleanup_old_textures(*asset);
+        } else if (program::WindowState::newAsset){
+            // remove all previous assets for now
+            for (auto it = program::WindowState::assets.begin(); it != program::WindowState::assets.end();) {
+                std::shared_ptr<toolbox::Asset> locked_asset = it->lock();
 
-        toolbox::ImageRenderer::buildSDLTexture(WindowManager::renderer, asset);
+                // removes any asset that's currently visible
+                if (locked_asset) {
+                    cleanup_old_textures(*locked_asset);                    
+                }
 
-        program::WindowState::assets.push_back(asset);
+                // removes any dangling weak pointer, not the actual asset
+                it = program::WindowState::assets.erase(it);
+            }
+            for (std::weak_ptr<toolbox::Asset> old_asset : program::WindowState::assets) {
+
+            }
+
+            program::WindowState::assets.clear();
+            program::WindowState::assets.push_back(asset);
+            program::WindowState::newAsset = false;
+        }
+
+        toolbox::ImageRenderer::buildSDLTexture(WindowManager::renderer, *asset);
+
         ImGui::SetScrollX(0.0f);
         ImGui::SetScrollY(0.0f);
         zoom_percentage = 0.6f;
-        program::WindowState::newAsset = false;
-        program::WindowState::textureUpdate = false;
+
+        if (program::WindowState::textureUpdate) {
+            program::WindowState::textureUpdate = false;
+        }
     }
 
     if (asset->SDL_texture) {
@@ -109,13 +131,13 @@ bool WindowManager::renderPreviewImage(float zoom_percentage) {
         float max_w = width * zoom_percentage,
         max_h =  height * zoom_percentage;
 
-        float scale = std::min(max_w / asset->image.cols, max_h / asset->image.rows);
+        float scale = std::min(max_w / asset->displayed_image.cols, max_h / asset->displayed_image.rows);
 
-        ImVec2 size = ImVec2(asset->image.cols * scale, asset->image.rows * scale);
+        ImVec2 size = ImVec2(asset->displayed_image.cols * scale, asset->displayed_image.rows * scale);
 
         ImGui::SetCursorPos(ImVec2((width - size.x) / 2, (height - size.y) / 2));
         // ImVec2 size = ImVec2(DISPLAY_WIDTH - 2 * (DISPLAY_WIDTH / 5) - 20, DISPLAY_HEIGHT - 60);
-        ImGui::Image((ImTextureID)asset->SDL_texture, size);
+        ImGui::Image((ImTextureID)asset.get()->SDL_texture, size);
     } else {
         ImGui::Text("No image is selected");
     }

@@ -11,16 +11,18 @@ namespace program {
     void handleSDLEvents(bool *running);
 
     struct WindowState {
-        static toolbox::Asset *currentAsset;
+        static std::weak_ptr<toolbox::Asset> currentAsset;
         static bool newAsset;
         static bool textureUpdate;
         static std::vector<SDL_Texture*> owned_textures;
-        static std::vector<toolbox::Asset *> assets;
+        static std::vector<std::weak_ptr<toolbox::Asset>> assets;
         static std::vector<std::unique_ptr<IPanel>> panels;
         static std::unordered_map<std::string, IPanel*> panel_map;
         static std::queue<std::pair<std::string, unsigned int>> commands;
     };
 
+    std::shared_ptr<toolbox::Asset> getChosenAsset();
+    void setChosenAsset(std::shared_ptr<toolbox::Asset> asset);
     /**
      * A panel wants to request some state.
      * There are different implementations for this:

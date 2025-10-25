@@ -6,8 +6,8 @@ namespace program {
     struct IAcquisitorService : public IService {
         std::string name = "acquisitor_service";
 
-        toolbox::Asset *getAssetByName(std::string);
-        toolbox::Asset *getLatestAsset();
-        std::vector<toolbox::Asset *> *getAssets();
+        std::weak_ptr<toolbox::Asset> getAssetByName(std::string);
+        std::weak_ptr<toolbox::Asset> getLatestAsset();
+        std::vector<std::weak_ptr<toolbox::Asset>> *getAssets();
     };
 }

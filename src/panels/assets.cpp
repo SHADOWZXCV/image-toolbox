@@ -3,8 +3,8 @@
 void IAssetsPanel::pre_draw() {}
 bool IAssetsPanel::show_condition() {
     // TODO: Reserve names in an internal state
-    program::IAcquisitorService* acquisitor = static_cast<program::IAcquisitorService*>(program::ServiceManager::getByName("acquisitor_service"));
-    std::vector<toolbox::Asset *> *assets = acquisitor->getAssets();
+    std::shared_ptr<program::IAcquisitorService> acquisitor = program::ServiceManager::get<program::IAcquisitorService>();
+    std::vector<std::weak_ptr<toolbox::Asset>> *assets = acquisitor->getAssets();
 
     if (assets->empty()) {
         return false;
@@ -12,6 +12,7 @@ bool IAssetsPanel::show_condition() {
 
     return true;
 }
+
 void IAssetsPanel::handle_events() {
     this->restrictWindowSize();
 }
@@ -46,54 +47,59 @@ void IAssetsPanel::draw() {
 
     ImGui::SeparatorText("Layers");
     // TODO: Reserve names in an internal state
-    program::IAcquisitorService* acquisitor = static_cast<program::IAcquisitorService*>(program::ServiceManager::getByName("acquisitor_service"));
-    std::vector<toolbox::Asset *> *assets = acquisitor->getAssets();
+    std::shared_ptr<program::IAcquisitorService> acquisitor = program::ServiceManager::get<program::IAcquisitorService>();
+    std::vector<std::weak_ptr<toolbox::Asset>> *assets = acquisitor->getAssets();
     ImVec2 currSize = ImGui::GetWindowSize();
+
     for(short i = 0; i < (*assets).size(); i++) {
-        toolbox::Asset *asset = (*assets)[i];
-        std::string asset_name;
-        size_t asset_name_pos = asset->path.rfind("\\");
+        if (std::shared_ptr<toolbox::Asset> asset = (*assets)[i].lock()) {
+            std::string asset_name;
+            size_t asset_name_pos = asset->path.rfind("\\");
 
-        if (asset_name_pos != std::string::npos) {
-            asset_name = asset->path.substr(asset_name_pos + 1);
-        } else {
-            asset_name = asset->path;
-        }
-
-        if (asset) {
-            // ImVec2(currSize.x -  10, 90)
-            ImGui::BeginChild(asset->path.c_str(), ImVec2(), ImGuiChildFlags_AlwaysAutoResize | ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_Borders, ImGuiWindowFlags_HorizontalScrollbar);
-            ImGui::Text(asset_name.c_str());
-
-            if (ImGui::IsItemHovered())
-            {
-                ImGui::BeginTooltip();
-
-                // ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f); // Optional: wrap long text
-                ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.6f), asset->path.c_str());
-                // ImGui::PopTextWrapPos();
-
-                // 5. End the tooltip window
-                ImGui::EndTooltip();
+            if (asset_name_pos != std::string::npos) {
+                asset_name = asset->path.substr(asset_name_pos + 1);
+            } else {
+                asset_name = asset->path;
             }
 
-            ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.6f), "Size: %dx%d", asset->image.cols, asset->image.rows);
-            ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.6f), "Channels: %d", asset->image.channels());
-            ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.6f), "Depth: %d", asset->image.depth());
-            ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.6f), "Total size in bytes: %d", asset->image.total());
-            ImGui::EndChild();
+            if (asset) {
+                // ImVec2(currSize.x -  10, 90)
+                ImGui::BeginChild(asset->path.c_str(), ImVec2(), ImGuiChildFlags_AlwaysAutoResize | ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_Borders, ImGuiWindowFlags_HorizontalScrollbar);
+                ImGui::Text(asset_name.c_str());
+
+                if (ImGui::IsItemHovered())
+                {
+                    ImGui::BeginTooltip();
+
+                    // ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f); // Optional: wrap long text
+                    ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.6f), asset->path.c_str());
+                    // ImGui::PopTextWrapPos();
+
+                    // 5. End the tooltip window
+                    ImGui::EndTooltip();
+                }
+
+                ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.6f), "Size: %dx%d", asset->original_image.cols, asset->original_image.rows);
+                ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.6f), "Channels: %d", asset->original_image.channels());
+                ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.6f), "Depth: %d", asset->original_image.depth());
+                ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.6f), "Total size in bytes: %d", asset->original_image.total());
+                ImGui::EndChild();
+            }
         }
     }
 
     // Histogram
-    toolbox::Asset *asset = (*assets)[0];
+    std::shared_ptr<toolbox::Asset> chosenAsset = program::getChosenAsset();
+    if (chosenAsset == nullptr)
+        return;
+
     cv::Mat hist;
     float range[] = { 0, 256 }; // The upper boundary is non-inclusive
     const float* histRange[] = { range };
     int channels[] = { 0 };
     int histSize[] = { 256 };
     cv::calcHist(
-        &asset->image,
+        &chosenAsset->displayed_image,
         1,
         channels,
         cv::Mat(),
