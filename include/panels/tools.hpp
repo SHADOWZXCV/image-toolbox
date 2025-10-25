@@ -43,11 +43,16 @@ struct IToolsPanel : public IPanel {
         uint32_t buttonsPressed = 0;
         float transformation_x = 0.0f;
         float transformation_y = 0.0f;
+        float rotate_center[2] = { 0, 0 };
+        float rotate_angle = 0;
         float prev_transformation_x = 0.0f;
         float prev_transformation_y = 0.0f;
+        float prev_rotate_angle = 0;
         bool slider_transform_x_changed = false;
         bool slider_transform_y_changed = false;
         bool popup_geo_transform_open = false;
+        bool rotate_center_changed = false;
+        bool rotate_angle_changed = false;
         std::shared_ptr<program::IAcquisitorService> acquisitor = program::ServiceManager::get<program::IAcquisitorService>();
         std::weak_ptr<toolbox::Asset> assetPtr;
 

@@ -19,6 +19,9 @@ void IToolsPanel::handle_events() {
 
         if (buttonPressed(GEO_TRANSFORMATION_BUTTON)) {
             float translation[2] = {0, 0};
+            float apply_rotation_center[2] = {0, 0};
+            float apply_rotation_angle = 0;
+
             if (slider_transform_x_changed) {
                 float x_val = transformation_x - prev_transformation_x;
                 prev_transformation_x = transformation_x;
@@ -30,6 +33,25 @@ void IToolsPanel::handle_events() {
                 prev_transformation_y = transformation_y;
                 translation[1] = y_val;
                 slider_transform_y_changed = false;
+            }
+
+            if (rotate_center_changed || rotate_angle_changed) {
+                apply_rotation_center[0] = rotate_center[0];
+                apply_rotation_center[1] = rotate_center[1];
+                apply_rotation_angle = rotate_angle - prev_rotate_angle;
+                prev_rotate_angle = rotate_angle;
+
+                if (asset) {
+                    toolbox::OpenCVProcessor::process<toolbox::GeometricTransformation::Rotation>(
+                        *asset,
+                        apply_rotation_center[0],
+                        apply_rotation_center[1],
+                        apply_rotation_angle
+                    );
+                }
+
+                rotate_center_changed = false;
+                rotate_angle_changed = false;
             }
 
             if (translation[0] || translation[1]) {
@@ -107,14 +129,22 @@ void IToolsPanel::draw() {
 
     if (ImGui::BeginPopup("GEO_POPUP")) {
         ImGui::SeparatorText("Geometric Transformations");
+
         ImGui::Text("Translate");
         slider_transform_x_changed = ImGui::SliderFloat("X-Axis", &transformation_x, -max_transformation_x, max_transformation_x);
         slider_transform_y_changed = ImGui::SliderFloat("Y-Axis", &transformation_y, -max_transformation_y, max_transformation_y);
 
+        ImGui::Separator();
+        ImGui::Text("Rotate");
+        rotate_center_changed = ImGui::InputFloat2("Center of rotation (x, y)", rotate_center);
+        rotate_angle_changed = ImGui::SliderFloat("Rotation angle in degrees", &rotate_angle, 0, 360);
+
+        // show a small cursor pointing at the center of the image, showing the center that the user chose
+
         if (!buttonPressed(GEO_TRANSFORMATION_BUTTON)) {
             ImGui::CloseCurrentPopup();
         }
-        
+
         ImGui::EndPopup();
     } else {
         // reset the popup state

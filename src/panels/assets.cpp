@@ -3,6 +3,7 @@
 void IAssetsPanel::pre_draw() {}
 bool IAssetsPanel::show_condition() {
     // TODO: Reserve names in an internal state
+    // The absolute useless getter of all time right here!
     std::shared_ptr<program::IAcquisitorService> acquisitor = program::ServiceManager::get<program::IAcquisitorService>();
     std::vector<std::weak_ptr<toolbox::Asset>> *assets = acquisitor->getAssets();
 
