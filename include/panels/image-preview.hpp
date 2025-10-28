@@ -4,12 +4,10 @@
 #include "manager/state.hpp"
 #include "acquisitor/acquisitor.hpp"
 #include "shared/state.hpp"
+#include "renderer/processor.hpp"
+#include "renderer/transformations/geometric.hpp"
 
 namespace program {
-    struct ISceneService : public IService {
-        toolbox::Asset *selectedAsset;
-        std::vector<toolbox::Asset *> onPreviewAssets;
-    };
 }
 
 struct IImagePreviewPanel : public IPanel {
@@ -35,4 +33,9 @@ struct IImagePreviewPanel : public IPanel {
             ImGuiWindowFlags_NoCollapse |
             ImGuiWindowFlags_NoBackground |
             ImGuiTableFlags_NoBordersInBody;
+
+        // state
+        std::vector<std::weak_ptr<toolbox::Asset>> assets;
+        bool free_rotate_switch = false;
+        float prev_rotation_angle = 0;
 };

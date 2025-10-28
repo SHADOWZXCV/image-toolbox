@@ -3,6 +3,16 @@
 void IToolsPanel::pre_draw() {
     // set internal state
     assetPtr = acquisitor->getLatestAsset();
+
+    std::shared_ptr<toolbox::Asset> asset = assetPtr.lock();
+
+    if (asset == nullptr) {
+        return;
+    }
+
+    rotate_center[0] = asset->rotation_center.x;
+    rotate_center[1] = asset->rotation_center.y;
+    rotate_angle = asset->rotation_angle;
 }
 
 void IToolsPanel::handle_events() {
@@ -18,6 +28,7 @@ void IToolsPanel::handle_events() {
         }
 
         if (buttonPressed(GEO_TRANSFORMATION_BUTTON)) {
+            program::WindowState::controlsState.geoTransformEnabled = true;
             float translation[2] = {0, 0};
             float apply_rotation_center[2] = {0, 0};
             float apply_rotation_angle = 0;
@@ -36,17 +47,17 @@ void IToolsPanel::handle_events() {
             }
 
             if (rotate_center_changed || rotate_angle_changed) {
-                apply_rotation_center[0] = rotate_center[0];
-                apply_rotation_center[1] = rotate_center[1];
-                apply_rotation_angle = rotate_angle - prev_rotate_angle;
+                asset->rotation_center.x = rotate_center[0];
+                asset->rotation_center.y = rotate_center[1];
+                asset->rotation_angle = rotate_angle - prev_rotate_angle;
                 prev_rotate_angle = rotate_angle;
 
                 if (asset) {
                     toolbox::OpenCVProcessor::process<toolbox::GeometricTransformation::Rotation>(
                         *asset,
-                        apply_rotation_center[0],
-                        apply_rotation_center[1],
-                        apply_rotation_angle
+                        asset->rotation_center.x,
+                        asset->rotation_center.y,
+                        asset->rotation_angle
                     );
                 }
 
@@ -59,6 +70,10 @@ void IToolsPanel::handle_events() {
                     toolbox::OpenCVProcessor::process<toolbox::GeometricTransformation::Translate>(*asset, translation[0], translation[1]);
                 }
             }
+
+            program::WindowState::controlsState.geoTransformFlags.rotation_center_enabled = rotate_center_mouse_checked;
+        } else {
+            program::WindowState::controlsState.geoTransformEnabled = false;
         }
     }
 }
@@ -136,10 +151,16 @@ void IToolsPanel::draw() {
 
         ImGui::Separator();
         ImGui::Text("Rotate");
-        rotate_center_changed = ImGui::InputFloat2("Center of rotation (x, y)", rotate_center);
-        rotate_angle_changed = ImGui::SliderFloat("Rotation angle in degrees", &rotate_angle, 0, 360);
 
-        // show a small cursor pointing at the center of the image, showing the center that the user chose
+        bool pressed = ImGui::Checkbox("Auto-select center", &rotate_center_mouse_checked);
+
+        if (!rotate_center_mouse_checked) {
+            rotate_center_changed = ImGui::InputFloat2("Center of rotation (x, y)", rotate_center);
+            rotate_angle_changed = ImGui::SliderFloat("Rotation angle in degrees", &rotate_angle, 0, 360);
+        } else {
+            rotate_center_changed = false;
+            rotate_angle_changed = false;
+        }
 
         if (!buttonPressed(GEO_TRANSFORMATION_BUTTON)) {
             ImGui::CloseCurrentPopup();

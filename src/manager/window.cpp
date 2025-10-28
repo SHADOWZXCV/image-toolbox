@@ -80,13 +80,14 @@ bool WindowManager::createVirtualWindow(std::string name, ImGuiWindowFlags flags
     flags);
 }
 
-bool WindowManager::renderPreviewImage(float zoom_percentage) {
+std::weak_ptr<toolbox::Asset> WindowManager::renderPreviewImage(float zoom_percentage) {
     std::shared_ptr<toolbox::Asset> asset = program::getChosenAsset();
+    std::weak_ptr<toolbox::Asset> observe_asset(asset);
 
     if (asset == nullptr) {
         ImGui::Text("No image is selected");
 
-        return false;
+        return observe_asset;
     }
 
     if (program::WindowState::newAsset || program::WindowState::textureUpdate) {
@@ -132,17 +133,23 @@ bool WindowManager::renderPreviewImage(float zoom_percentage) {
         max_h =  height * zoom_percentage;
 
         float scale = std::min(max_w / asset->displayed_image.cols, max_h / asset->displayed_image.rows);
-
         ImVec2 size = ImVec2(asset->displayed_image.cols * scale, asset->displayed_image.rows * scale);
+        ImVec2 position = ImVec2((width - size.x) / 2, (height - size.y) / 2);
 
-        ImGui::SetCursorPos(ImVec2((width - size.x) / 2, (height - size.y) / 2));
+        ImVec2 window = ImGui::GetWindowPos();
+
+        asset->position = ImVec2(window.x + position.x, window.y + position.y);
+        asset->size = size;
+
+        ImGui::SetCursorPos(position);
+
         // ImVec2 size = ImVec2(DISPLAY_WIDTH - 2 * (DISPLAY_WIDTH / 5) - 20, DISPLAY_HEIGHT - 60);
         ImGui::Image((ImTextureID)asset.get()->SDL_texture, size);
     } else {
         ImGui::Text("No image is selected");
     }
 
-    return true;
+    return observe_asset;
 }
 
 bool WindowManager::endVirtualWindow() {

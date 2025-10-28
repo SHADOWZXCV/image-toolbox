@@ -3,8 +3,8 @@
 
 SDL_Event program::event;
 int program::DISPLAY_WIDTH, program::DISPLAY_HEIGHT;
+program::ControlsState program::WindowState::controlsState;
 std::vector<std::unique_ptr<IPanel>> program::WindowState::panels;
-std::vector<SDL_Texture*> program::WindowState::owned_textures;
 std::vector<std::weak_ptr<toolbox::Asset>> program::WindowState::assets;
 std::queue<std::pair<std::string, unsigned int>> program::WindowState::commands;
 std::unordered_map<std::string, IPanel*> program::WindowState::panel_map;

@@ -15,6 +15,11 @@ namespace toolbox {
         SDL_Texture *SDL_texture;
         cv::Mat original_image;
         cv::Mat displayed_image;
+        
+        ImVec2 position;
+        ImVec2 size;
+        ImVec2 rotation_center;
+        float rotation_angle;
         // state
         cv::Mat transformation;
         bool dirty = false;

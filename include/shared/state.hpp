@@ -10,11 +10,22 @@ namespace program {
     void init_display_state(SDL_Window *window);
     void handleSDLEvents(bool *running);
 
+    struct ControlsState {
+        bool geoTransformEnabled;
+
+        struct GeoTransformFlags {
+            bool rotation_center_enabled;
+        } geoTransformFlags;
+        struct GeoTransformState {
+            ImVec2 rotation_center;
+        } geoTransform;
+    };
+
     struct WindowState {
+        static ControlsState controlsState;
         static std::weak_ptr<toolbox::Asset> currentAsset;
         static bool newAsset;
         static bool textureUpdate;
-        static std::vector<SDL_Texture*> owned_textures;
         static std::vector<std::weak_ptr<toolbox::Asset>> assets;
         static std::vector<std::unique_ptr<IPanel>> panels;
         static std::unordered_map<std::string, IPanel*> panel_map;

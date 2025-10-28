@@ -44,7 +44,7 @@ namespace Graphics {
         static bool init_context();
         static bool start_frame();
         static bool render_frame();
-        static bool renderPreviewImage(float zoom_percentage);
+        static std::weak_ptr<toolbox::Asset> renderPreviewImage(float zoom_percentage);
         static bool draw();
         static void command_panel(std::pair<std::string, int> command);
         
