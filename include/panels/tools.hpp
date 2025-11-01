@@ -49,9 +49,9 @@ struct IToolsPanel : public IPanel {
         float prev_transformation_y = 0.0f;
         float prev_rotate_angle = 0;
         bool rotate_center_mouse_checked = false;
+        bool skew_checked = false;
         bool slider_transform_x_changed = false;
         bool slider_transform_y_changed = false;
-        bool popup_geo_transform_open = false;
         bool rotate_center_changed = false;
         bool rotate_angle_changed = false;
         std::shared_ptr<program::IAcquisitorService> acquisitor = program::ServiceManager::get<program::IAcquisitorService>();

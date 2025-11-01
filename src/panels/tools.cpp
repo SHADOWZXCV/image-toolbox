@@ -30,8 +30,6 @@ void IToolsPanel::handle_events() {
         if (buttonPressed(GEO_TRANSFORMATION_BUTTON)) {
             program::WindowState::controlsState.geoTransformEnabled = true;
             float translation[2] = {0, 0};
-            float apply_rotation_center[2] = {0, 0};
-            float apply_rotation_angle = 0;
 
             if (slider_transform_x_changed) {
                 float x_val = transformation_x - prev_transformation_x;
@@ -72,9 +70,12 @@ void IToolsPanel::handle_events() {
             }
 
             program::WindowState::controlsState.geoTransformFlags.rotation_center_enabled = rotate_center_mouse_checked;
-        } else {
-            program::WindowState::controlsState.geoTransformEnabled = false;
+            program::WindowState::controlsState.geoTransformFlags.skew_enabled = skew_checked;
         }
+    }
+
+    if (!buttonPressed(GEO_TRANSFORMATION_BUTTON)) {
+        program::WindowState::controlsState.geoTransformEnabled = false;
     }
 }
 
@@ -113,6 +114,9 @@ void IToolsPanel::draw() {
 
     ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Add 10 pixels of vertical space between buttons
 
+    bool popup_geo_transform_open = buttonPressed(GEO_TRANSFORMATION_BUTTON);
+    bool draw_popup = false;
+
     if (popup_geo_transform_open) {
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.6f, 0.9f, 0.4f));
     }
@@ -126,23 +130,19 @@ void IToolsPanel::draw() {
         buttonsPressed ^= 1 << GEO_TRANSFORMATION_BUTTON;
     }
 
+    draw_popup = buttonPressed(GEO_TRANSFORMATION_BUTTON);
+
     if (popup_geo_transform_open) {
         ImGui::PopStyleColor();
     }
 
-    if (buttonPressed(GEO_TRANSFORMATION_BUTTON) && !popup_geo_transform_open) {
-        ImGui::OpenPopup("GEO_POPUP");
-        popup_geo_transform_open = true;
-    } else if (!buttonPressed(GEO_TRANSFORMATION_BUTTON)) {
-        popup_geo_transform_open = false;
-    }
-
-    ImVec2 button_top_right = ImVec2(ImGui::GetItemRectMax().x + 20, ImGui::GetItemRectMin().y);
+    if (draw_popup) {
+        ImVec2 button_top_right = ImVec2(ImGui::GetItemRectMax().x + 20, ImGui::GetItemRectMin().y);
     
-    // Set the popup's top-left corner to be at the button's top-right
-    ImGui::SetNextWindowPos(button_top_right);
-
-    if (ImGui::BeginPopup("GEO_POPUP")) {
+        // Set the popup's top-left corner to be at the button's top-right
+        ImGui::SetNextWindowPos(button_top_right);
+        ImGui::SetNextWindowSize(ImVec2(0, 0));
+        ImGui::Begin("GEO_POPUP", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize);
         ImGui::SeparatorText("Geometric Transformations");
 
         ImGui::Text("Translate");
@@ -152,25 +152,28 @@ void IToolsPanel::draw() {
         ImGui::Separator();
         ImGui::Text("Rotate");
 
-        bool pressed = ImGui::Checkbox("Auto-select center", &rotate_center_mouse_checked);
+        bool mouseRotatePressed = ImGui::Checkbox("Auto-select center", &rotate_center_mouse_checked);
 
-        if (!rotate_center_mouse_checked) {
-            rotate_center_changed = ImGui::InputFloat2("Center of rotation (x, y)", rotate_center);
-            rotate_angle_changed = ImGui::SliderFloat("Rotation angle in degrees", &rotate_angle, 0, 360);
-        } else {
-            rotate_center_changed = false;
-            rotate_angle_changed = false;
+        ImGui::BeginDisabled(rotate_center_mouse_checked);
+
+        rotate_center_changed = ImGui::InputFloat2("Center of rotation (x, y)", rotate_center);
+        rotate_angle_changed = ImGui::SliderFloat("Rotation angle in degrees", &rotate_angle, 0, 360);
+
+        ImGui::EndDisabled();
+
+        ImGui::Separator();
+        ImGui::Text("Skew");
+        bool mouseSkewPressed = ImGui::Checkbox("Enable Skew", &skew_checked);
+
+        if (mouseSkewPressed) {
+            rotate_center_mouse_checked = false;
+        } 
+        
+        if (mouseRotatePressed) {
+            skew_checked = false;
         }
 
-        if (!buttonPressed(GEO_TRANSFORMATION_BUTTON)) {
-            ImGui::CloseCurrentPopup();
-        }
-
-        ImGui::EndPopup();
-    } else {
-        // reset the popup state
-        popup_geo_transform_open = false;
-        buttonsPressed &= ~(1 << GEO_TRANSFORMATION_BUTTON);
+        ImGui::End();
     }
 
     ImDrawList* draw_list = ImGui::GetWindowDrawList();

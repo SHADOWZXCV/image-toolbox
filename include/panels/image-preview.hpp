@@ -7,8 +7,10 @@
 #include "renderer/processor.hpp"
 #include "renderer/transformations/geometric.hpp"
 
-namespace program {
-}
+#define TOP_EDGE cv::Point2d(4, 5)
+#define RIGHT_EDGE cv::Point2d(5, 6)
+#define BOTTOM_EDGE cv::Point2d(6, 7)
+#define LEFT_EDGE cv::Point2d(7, 4)
 
 struct IImagePreviewPanel : public IPanel {
     unsigned int getID() const override { return id; }
@@ -20,6 +22,7 @@ struct IImagePreviewPanel : public IPanel {
     void draw() override;
     void handle_events() override;
     bool show_condition() override;
+    ImVec2* transformImageCorners(ImVec2 position, cv::MatSize size,  cv::Mat transformation);
 
     static constexpr const char* name = "Image Preview";
     private:
@@ -36,6 +39,12 @@ struct IImagePreviewPanel : public IPanel {
 
         // state
         std::vector<std::weak_ptr<toolbox::Asset>> assets;
+        std::weak_ptr<toolbox::Asset> assetWeak;
         bool free_rotate_switch = false;
+        bool edge_held = false;
         float prev_rotation_angle = 0;
+        ImVec2 edge_held_points[2];
+        ImVec2 mouse_skew_delta;
+        ImVec2 prev_mouse_skew_delta = ImVec2();
+        ImVec2 handles_abs_positions[8];
 };

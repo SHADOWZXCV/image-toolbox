@@ -15,6 +15,7 @@ namespace program {
 
         struct GeoTransformFlags {
             bool rotation_center_enabled;
+            bool skew_enabled;
         } geoTransformFlags;
         struct GeoTransformState {
             ImVec2 rotation_center;
