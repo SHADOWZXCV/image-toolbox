@@ -21,10 +21,20 @@ void IToolsPanel::handle_events() {
 
         if (buttonPressed(EQUALIZE_BUTTON)) {
             if (asset) {
-                toolbox::OpenCVProcessor::process<toolbox::HistogramEqualize>(*asset);
+                toolbox::OpenCVProcessor::process<toolbox::Enahnce::HistogramEqualize>(*asset);
             }
 
             buttonsPressed &= ~(1 << EQUALIZE_BUTTON);
+        }
+
+        if (buttonPressed(CONTRAST_BUTTON)) {
+            if (contrast_stretch_pressed) {
+                if (asset) {
+                    toolbox::OpenCVProcessor::process<toolbox::Enahnce::ContrastStretch>(*asset, contrast_r1, contrast_r2, contrast_s1, contrast_s2);
+                }
+
+                contrast_stretch_pressed = false;
+            }
         }
 
         if (buttonPressed(GEO_TRANSFORMATION_BUTTON)) {
@@ -143,33 +153,58 @@ void IToolsPanel::draw() {
 
     buttonsPressed |= ImGui::Button(ICON_FA_CHART_LINE, ImVec2(this->size.x - 20, this->size.x - 20)) << EQUALIZE_BUTTON;
 
-    ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Add 10 pixels of vertical space between buttons
+    ImGui::Dummy(ImVec2(0.0f, 5.0f));
 
-    bool popup_geo_transform_open = buttonPressed(GEO_TRANSFORMATION_BUTTON);
-    bool draw_popup = false;
+    bool wasContrastPressed = buttonPressed(CONTRAST_BUTTON);
 
-    if (popup_geo_transform_open) {
+    if (wasContrastPressed) {
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.6f, 0.9f, 0.4f));
     }
 
-    bool geoPressed = ImGui::Button(ICON_FA_VECTOR_SQUARE, ImVec2(this->size.x - 20, this->size.x - 20));
+    buttonsPressed ^= ImGui::Button(ICON_FA_CIRCLE_HALF_STROKE, ImVec2(this->size.x - 20, this->size.x - 20)) << CONTRAST_BUTTON;
+
+
+    if (wasContrastPressed) {
+        ImGui::PopStyleColor();
+
+        ImVec2 button_top_right = ImVec2(ImGui::GetItemRectMax().x + 20, ImGui::GetItemRectMin().y);
+    
+        // Set the popup's top-left corner to be at the button's top-right
+        ImGui::SetNextWindowPos(button_top_right);
+        ImGui::SetNextWindowSize(ImVec2(0, 0));
+        ImGui::Begin("CONTRAST_POPUP", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize);
+        ImGui::SeparatorText("Contrast stretching options");
+
+        ImGui::InputScalar("R1", ImGuiDataType_U8, &contrast_r1);
+        ImGui::InputScalar("R2", ImGuiDataType_U8, &contrast_r2);
+        ImGui::InputScalar("S1", ImGuiDataType_U8, &contrast_s1);
+        ImGui::InputScalar("S2", ImGuiDataType_U8, &contrast_s2);
+
+        contrast_stretch_pressed = ImGui::Button("Apply");
+        
+        ImGui::End();
+    }
+
+    ImGui::Dummy(ImVec2(0.0f, 5.0f));
+
+    bool wasGeoPressed = buttonPressed(GEO_TRANSFORMATION_BUTTON);
+
+    if (wasGeoPressed) {
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.6f, 0.9f, 0.4f));
+    }
+
+    buttonsPressed ^= ImGui::Button(ICON_FA_VECTOR_SQUARE, ImVec2(this->size.x - 20, this->size.x - 20)) << GEO_TRANSFORMATION_BUTTON;
+
     float delta_scale_x = prev_scale_x ? scale_x / prev_scale_x : 1;
     float delta_scale_y = prev_scale_y ? scale_y / prev_scale_y : 1;
     float max_transformation_x = (float) asset->displayed_image.cols * delta_scale_x;
     float max_transformation_y = (float) asset->displayed_image.rows * delta_scale_y;
 
-    if (geoPressed) {
-        // prev status xor 1 = toggle on off
-        buttonsPressed ^= 1 << GEO_TRANSFORMATION_BUTTON;
-    }
-
-    draw_popup = buttonPressed(GEO_TRANSFORMATION_BUTTON);
-
-    if (popup_geo_transform_open) {
+    if (wasGeoPressed) {
         ImGui::PopStyleColor();
     }
 
-    if (draw_popup) {
+    if (wasGeoPressed) {
         ImVec2 button_top_right = ImVec2(ImGui::GetItemRectMax().x + 20, ImGui::GetItemRectMin().y);
     
         // Set the popup's top-left corner to be at the button's top-right

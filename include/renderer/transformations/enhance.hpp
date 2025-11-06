@@ -2,11 +2,16 @@
 #include "renderer/processor.hpp"
 
 namespace toolbox {
-    struct HistogramEqualize: public Transformation {
-        void apply(toolbox::Asset&) override;
-    };
+    struct Enahnce {
+        struct HistogramEqualize: public Transformation {
+            void apply(toolbox::Asset&) override;
+        };
+        struct ContrastStretch: public Transformation {
+            short r1, r2, s1, s2;
+            ContrastStretch(short r1, short r2, short s1, short s2)
+            : r1(r1), r2(r2), s1(s1), s2(s2) {}
 
-    struct ContrastStretch: public Transformation {
-        void apply(toolbox::Asset&) override;
+            void apply(toolbox::Asset&) override;
+        };
     };
 }

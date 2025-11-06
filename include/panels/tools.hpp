@@ -12,7 +12,8 @@
 
 enum ToolsButtons {
     EQUALIZE_BUTTON = 0,
-    GEO_TRANSFORMATION_BUTTON = 1
+    CONTRAST_BUTTON = 1,
+    GEO_TRANSFORMATION_BUTTON = 2
 };
 
 struct IToolsPanel : public IPanel {
@@ -53,6 +54,10 @@ struct IToolsPanel : public IPanel {
         float scale_same_ratio = 1.0f;
         float prev_scale_x = 1.0f;
         float prev_scale_y = 1.0f;
+        short contrast_r1 = 0;
+        short contrast_r2 = 0;
+        short contrast_s1 = 0;
+        short contrast_s2 = 0;
         float prev_scale_same_ratio = 1.0f;
         bool scale_mouse_checked = false;
         bool scale_x_slider_changed = false;
@@ -67,6 +72,8 @@ struct IToolsPanel : public IPanel {
         bool flip_x_pressed = false;
         bool flip_y_pressed = false;
         bool scale_aspect_ratio_checked = false;
+        bool contrast_stretch_pressed = false;
+
         std::shared_ptr<program::IAcquisitorService> acquisitor = program::ServiceManager::get<program::IAcquisitorService>();
         std::weak_ptr<toolbox::Asset> assetPtr;
 
