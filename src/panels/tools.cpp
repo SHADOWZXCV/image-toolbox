@@ -71,6 +71,37 @@ void IToolsPanel::handle_events() {
 
             program::WindowState::controlsState.geoTransformFlags.rotation_center_enabled = rotate_center_mouse_checked;
             program::WindowState::controlsState.geoTransformFlags.skew_enabled = skew_checked;
+            // useless atm, but if I need it later I can fix it
+            program::WindowState::controlsState.geoTransformFlags.flip_command_enabled = flip_x_pressed || flip_y_pressed;
+
+            if (flip_x_pressed || flip_y_pressed) {
+                program::WindowState::controlsState.geoTransform.flip = {flip_x_pressed, flip_y_pressed};
+                program::BoolVec2 flip = {flip_x_pressed, flip_y_pressed};
+                toolbox::OpenCVProcessor::process<toolbox::GeometricTransformation::Flip>(*asset, flip.x, flip.y);
+
+                program::WindowState::controlsState.geoTransformFlags.flip_command_enabled = false;
+                flip_x_pressed = flip_y_pressed = false;
+            } else {
+                program::WindowState::controlsState.geoTransform.flip = {0, 0};
+            }
+
+            // check for scaling
+            if (scale_x_slider_changed || scale_y_slider_changed) {
+                float delta_scale_x = prev_scale_x ? scale_x / prev_scale_x : 1;
+                float delta_scale_y = prev_scale_y ? scale_y / prev_scale_y : 1;
+                
+                prev_scale_x = scale_x;
+                prev_scale_y = scale_y;
+
+                toolbox::OpenCVProcessor::process<toolbox::GeometricTransformation::Scale>(*asset, delta_scale_x, delta_scale_y);
+            } else if (scale_same_ratio_slider_changed) {
+                float delta_scale = prev_scale_same_ratio ? scale_same_ratio / prev_scale_same_ratio : 1;
+
+                prev_scale_same_ratio = scale_same_ratio;
+                toolbox::OpenCVProcessor::process<toolbox::GeometricTransformation::Scale>(*asset, delta_scale, delta_scale);
+            }
+
+            program::WindowState::controlsState.geoTransformFlags.scale_enabled = scale_mouse_checked;
         }
     }
 
@@ -122,8 +153,10 @@ void IToolsPanel::draw() {
     }
 
     bool geoPressed = ImGui::Button(ICON_FA_VECTOR_SQUARE, ImVec2(this->size.x - 20, this->size.x - 20));
-    float max_transformation_x = (float) asset->displayed_image.cols;
-    float max_transformation_y = (float) asset->displayed_image.rows;
+    float delta_scale_x = prev_scale_x ? scale_x / prev_scale_x : 1;
+    float delta_scale_y = prev_scale_y ? scale_y / prev_scale_y : 1;
+    float max_transformation_x = (float) asset->displayed_image.cols * delta_scale_x;
+    float max_transformation_y = (float) asset->displayed_image.rows * delta_scale_y;
 
     if (geoPressed) {
         // prev status xor 1 = toggle on off
@@ -152,7 +185,7 @@ void IToolsPanel::draw() {
         ImGui::Separator();
         ImGui::Text("Rotate");
 
-        bool mouseRotatePressed = ImGui::Checkbox("Auto-select center", &rotate_center_mouse_checked);
+        bool mouseRotatePressed = ImGui::Checkbox("Mouse-select center", &rotate_center_mouse_checked);
 
         ImGui::BeginDisabled(rotate_center_mouse_checked);
 
@@ -165,11 +198,54 @@ void IToolsPanel::draw() {
         ImGui::Text("Skew");
         bool mouseSkewPressed = ImGui::Checkbox("Enable Skew", &skew_checked);
 
+        ImGui::Separator();
+        ImGui::Text("Flip");
+
+        bool flipXPressed = ImGui::Button("Flip Horizontally");
+
+        ImGui::SameLine();
+
+        bool flipYPressed = ImGui::Button("Flip Vertically");
+
+        if (flipXPressed) {
+            flip_x_pressed = true;
+        }
+
+        if (flipYPressed) {
+            flip_y_pressed = true;
+        }
+
+        ImGui::Separator();
+        ImGui::Text("Scale");
+
+        
+        ImGui::BeginDisabled(scale_mouse_checked);
+        ImGui::Checkbox("Maintain aspect ratio", &scale_aspect_ratio_checked);
+
+        if (scale_aspect_ratio_checked) {
+            scale_same_ratio_slider_changed = ImGui::SliderFloat("Scale", &scale_same_ratio, 0.1f, 10.0f);
+            scale_x = scale_same_ratio;
+            scale_y = scale_same_ratio;
+            prev_scale_x = scale_same_ratio;
+            prev_scale_y = scale_same_ratio;
+        } else {
+            scale_x_slider_changed = ImGui::SliderFloat("Scale X-Axis", &scale_x, 0.1f, 10.0f);
+            scale_y_slider_changed = ImGui::SliderFloat("Scale Y-Axis", &scale_y, 0.1f, 10.0f);
+        }
+
+        ImGui::EndDisabled();
+
+        bool mouseScalePressed = ImGui::Checkbox("Mouse Scale", &scale_mouse_checked);
+
+        // can be converted to a binary masker instead of all these if conditions, but later :/
         if (mouseSkewPressed) {
             rotate_center_mouse_checked = false;
-        } 
-        
-        if (mouseRotatePressed) {
+            scale_mouse_checked = false;
+        } else if (mouseRotatePressed) {
+            skew_checked = false;
+            scale_mouse_checked = false;
+        } else if (mouseScalePressed) {
+            rotate_center_mouse_checked = false;
             skew_checked = false;
         }
 
@@ -180,7 +256,6 @@ void IToolsPanel::draw() {
     ImVec2 textPos = ImVec2((this->position.x + this->size.x) / 8, this->position.y + this->size.y - 30);
     draw_list->AddText(textPos, IM_COL32(255,255,255, 255), "Tools");
     draw_list->AddLine(ImVec2(this->position.x + 10, textPos.y - 15), ImVec2(this->position.x + this->size.x - 10, textPos.y - 15), IM_COL32(255, 255, 255, 80));
-
 
     ImGui::PopStyleColor(4);
     ImGui::PopStyleVar(2);

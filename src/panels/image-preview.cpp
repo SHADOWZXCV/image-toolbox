@@ -263,8 +263,6 @@ void IImagePreviewPanel::handle_events() {
                     float distance_mouse_start = sqrtf(powf(mouse_pos.x - start.x, 2) + powf(mouse_pos.y - start.y, 2));
 
                     if (fabsf((distance_mouse_end + distance_mouse_start) - distance) < 3.0f) {
-                        std::cout << "Hit edge " << i + 4 << " " << ((i + 1) % 4) + 4 << std::endl;
-
                         // Find the opposite edge and get its start and end
                         cv::Point2d line(start_idx, end_idx);
                         cv::Point2d opposite(getOppositeEdge(line));
@@ -326,6 +324,72 @@ void IImagePreviewPanel::handle_events() {
             } else {
                 // reset edge held
                 edge_held = false;
+            }
+        }
+
+        if (program::WindowState::controlsState.geoTransformFlags.scale_enabled) {
+            const Uint8 *keyState = SDL_GetKeyboardState(NULL);
+            bool xHeld = keyState[SDL_SCANCODE_X];
+            bool yHeld = keyState[SDL_SCANCODE_Y];
+            bool ctrlHeld = keyState[SDL_SCANCODE_RCTRL] || keyState[SDL_SCANCODE_LCTRL];
+
+            if (ctrlHeld) {
+                ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeNWSE);
+            } else if (xHeld) {
+                ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
+            } else if (yHeld) {
+                ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeNS);
+            } else {
+                ImGui::SetMouseCursor(ImGuiMouseCursor_Arrow);
+            }
+
+            if (ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
+                // TODO: If prefereable, just set this outside as an internal state instead of locking that every GODDAMN TIME!
+                std::shared_ptr<toolbox::Asset> asset = assetWeak.lock();
+                
+                if (!asset) {
+                    return;
+                }
+
+                ImVec2 mouse_delta = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left);
+                // std::cout << "delta x: " << mouse_delta.x << " delta y: " << mouse_delta.y << std::endl;
+                // std::cout << " prev delta x: " << prev_mouse_skew_delta.x << " prev delta y: " << prev_mouse_skew_delta.y
+                //           << std::endl;
+                mouse_skew_delta = ImVec2(mouse_delta.x - prev_mouse_skew_delta.x, mouse_delta.y - prev_mouse_skew_delta.y);
+                prev_mouse_skew_delta = mouse_delta;
+
+                if (mouse_skew_delta.x == 0 && mouse_skew_delta.y == 0) {
+                    return;
+                }
+
+                // Change to constants added from a constants file somewhere
+                // Store these somewhere on global state so that the tools file can use these
+                float scale_x = 1.0f + mouse_skew_delta.x * 0.01f;
+                float scale_y = 1.0f + mouse_skew_delta.y * 0.01f;
+                
+                // std::cout << "scale_x: " << scale_x << " scale_y: " << scale_y << std::endl;
+
+                if (ctrlHeld) {
+                    float avg_scale = (scale_x + scale_y) / 2.0f;
+                    toolbox::OpenCVProcessor::process<toolbox::GeometricTransformation::Scale>(
+                        *asset,
+                        avg_scale,
+                        avg_scale
+                    );
+                } else if (xHeld) {
+                    toolbox::OpenCVProcessor::process<toolbox::GeometricTransformation::Scale>(
+                        *asset,
+                        scale_x,
+                        1
+                    );
+                } else if (yHeld) {
+                    toolbox::OpenCVProcessor::process<toolbox::GeometricTransformation::Scale>(
+                        *asset,
+                        1,
+                        scale_y
+                    );
+                } else {
+                }
             }
         }
     } else {

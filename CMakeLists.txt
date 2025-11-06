@@ -3,7 +3,7 @@ project(toolbox LANGUAGES C CXX)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # ---------------- Assets ----------------
-file(COPY ${CMAKE_SOURCE_DIR}/assets/fonts DESTINATION ${CMAKE_BINARY_DIR}/include)
+file(COPY ${CMAKE_SOURCE_DIR}/assets/fonts DESTINATION ${CMAKE_BINARY_DIR}/include/assets)
 
 # ---------------- ImGui ----------------
 set(IMGUI_DIR ${CMAKE_SOURCE_DIR}/external/imgui)

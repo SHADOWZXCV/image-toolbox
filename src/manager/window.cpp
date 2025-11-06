@@ -12,7 +12,7 @@ void Graphics::load_fonts() {
 
     // 1. Load your main font
     float baseFontSize = 16.0f;
-    io.Fonts->AddFontFromFileTTF("include/assets/Roboto-Regular.ttf", baseFontSize);
+    io.Fonts->AddFontFromFileTTF("include/assets/fonts/Roboto-Regular.ttf", baseFontSize);
 
     float iconFontSize = baseFontSize; // Icons are often bigger than letters, so scale down
     ImFontConfig config;
@@ -24,7 +24,7 @@ void Graphics::load_fonts() {
     // ICON_MIN_FA and ICON_MAX_FA are defined in the header file.
     static const ImWchar icon_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
 
-    io.Fonts->AddFontFromFileTTF("include/assets/fa-solid-900.ttf", iconFontSize, &config, icon_ranges);
+    io.Fonts->AddFontFromFileTTF("include/assets/fonts/fa-solid-900.ttf", iconFontSize, &config, icon_ranges);
 
 }
 

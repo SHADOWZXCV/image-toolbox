@@ -10,15 +10,25 @@ namespace program {
     void init_display_state(SDL_Window *window);
     void handleSDLEvents(bool *running);
 
+    struct BoolVec2 {
+        BoolVec2(bool x_ = false, bool y_ = false) : x(x_), y(y_) {}
+        bool x;
+        bool y;
+    };
+
     struct ControlsState {
         bool geoTransformEnabled;
 
         struct GeoTransformFlags {
             bool rotation_center_enabled;
             bool skew_enabled;
+            bool flip_command_enabled;
+            bool scale_enabled;
         } geoTransformFlags;
         struct GeoTransformState {
             ImVec2 rotation_center;
+            BoolVec2 flip;
+            BoolVec2 scale;
         } geoTransform;
     };
 

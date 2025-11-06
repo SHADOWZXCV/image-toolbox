@@ -34,3 +34,17 @@ void toolbox::GeometricTransformation::Skew::apply(toolbox::Asset &asset) {
 
     asset.transformation = holder * asset.transformation;
 }
+
+void toolbox::GeometricTransformation::Scale::apply(toolbox::Asset &asset) {
+    cv::Mat matrix = (cv::Mat_<float>(3, 3) << sx, 0, 0, 0, sy, 0, 0, 0, 1);
+
+    asset.transformation = asset.transformation * matrix;
+}
+
+void toolbox::GeometricTransformation::Flip::apply(toolbox::Asset &asset) {
+    double tx = asset.displayed_image.cols;
+    double ty = asset.displayed_image.rows;
+    cv::Mat matrix = (cv::Mat_<float>(3, 3) << (x ? -1.0 : 1), 0, (x ? tx : 0), 0, (y ? -1.0 : 1), (y ? ty : 0), 0, 0, 1);
+
+    asset.transformation = matrix * asset.transformation;
+}

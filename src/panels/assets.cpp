@@ -82,7 +82,13 @@ void IAssetsPanel::draw() {
 
                 ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.6f), "Size: %dx%d", asset->original_image.cols, asset->original_image.rows);
                 ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.6f), "Channels: %d", asset->original_image.channels());
-                ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.6f), "Depth: %d", asset->original_image.depth());
+                ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.6f), "Depth: %s", asset->original_image.depth() == 0 ? "CV_8U" :
+                                                            asset->original_image.depth() == 1 ? "CV_8S" :
+                                                            asset->original_image.depth() == 2 ? "CV_16U" :
+                                                            asset->original_image.depth() == 3 ? "CV_16S" :
+                                                            asset->original_image.depth() == 4 ? "CV_32S" :
+                                                            asset->original_image.depth() == 5 ? "CV_32F" :
+                                                            asset->original_image.depth() == 6 ? "CV_64F" : "Unknown");
                 ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.6f), "Total size in bytes: %d", asset->original_image.total());
                 ImGui::EndChild();
             }
