@@ -241,11 +241,9 @@ void IImagePreviewPanel::handle_events() {
 
             int ix = static_cast<int>(image_x);
             int iy = static_cast<int>(image_y);
-            std::cout << ix << " " << iy << " : ";
 
             if (ix >= 0 && iy >= 0 && iy < asset->displayed_image.rows && ix < asset->displayed_image.cols) {
                 current_hovered_pixel = {ix, iy, static_cast<int>(asset->displayed_image.at<uchar>(iy, ix))};
-                std::cout << static_cast<int>(asset->displayed_image.at<uchar>(iy, ix)) << std::endl;
             }
         } else {
             pixel_inspector_mode_enabled = false;
@@ -437,9 +435,7 @@ void IImagePreviewPanel::handle_events() {
                 }
 
                 ImVec2 mouse_delta = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left);
-                // std::cout << "delta x: " << mouse_delta.x << " delta y: " << mouse_delta.y << std::endl;
-                // std::cout << " prev delta x: " << prev_mouse_skew_delta.x << " prev delta y: " << prev_mouse_skew_delta.y
-                //           << std::endl;
+
                 mouse_skew_delta = ImVec2(mouse_delta.x - prev_mouse_skew_delta.x, mouse_delta.y - prev_mouse_skew_delta.y);
                 prev_mouse_skew_delta = mouse_delta;
 
@@ -448,11 +444,9 @@ void IImagePreviewPanel::handle_events() {
                 }
 
                 // Change to constants added from a constants file somewhere
-                // Store these somewhere on global state so that the tools file can use these
+                // TODO: Store these somewhere on global state so that the tools file can use these
                 float scale_x = 1.0f + mouse_skew_delta.x * 0.01f;
                 float scale_y = 1.0f + mouse_skew_delta.y * 0.01f;
-                
-                // std::cout << "scale_x: " << scale_x << " scale_y: " << scale_y << std::endl;
 
                 if (ctrlHeld) {
                     float avg_scale = (scale_x + scale_y) / 2.0f;
@@ -480,5 +474,4 @@ void IImagePreviewPanel::handle_events() {
             ImGui::SetMouseCursor(ImGuiMouseCursor_Arrow);
         }
     }
-
 }
