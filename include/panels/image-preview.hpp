@@ -43,6 +43,12 @@ struct IImagePreviewPanel : public IPanel {
         bool free_rotate_switch = false;
         bool edge_held = false;
         float prev_rotation_angle = 0;
+        struct Pixel {
+            int x;
+            int y;
+            int intensity;
+        } current_hovered_pixel;
+        bool pixel_inspector_mode_enabled = false;
         ImVec2 edge_held_points[2];
         ImVec2 mouse_skew_delta;
         ImVec2 prev_mouse_skew_delta = ImVec2();

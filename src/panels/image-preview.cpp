@@ -1,4 +1,5 @@
 #include "panels/image-preview.hpp"
+#include <stdexcept>
 
 float zoom_percentage = 0.6f;
 
@@ -26,12 +27,61 @@ bool IImagePreviewPanel::show_condition() {
     return true;
 }
 void IImagePreviewPanel::draw() {
+    // not sure what this line is for, but I digress
+    assets.push_back(assetWeak);
+    this->handle_events();
+    assets.pop_back();
+
     if (this->panel_control_flags & RESET_ZOOM_FLAG) {
         ImGui::SetScrollX(0.0f);
         ImGui::SetScrollY(0.0f);
         zoom_percentage = 0.6f;
     }
     assetWeak = Graphics::WindowManager::renderPreviewImage(zoom_percentage);
+
+    if (pixel_inspector_mode_enabled) {
+        //! Let's assume for a minute that ASSET will always exist
+        // TODO: FIX IT LATER
+        std::shared_ptr<toolbox::Asset> asset = assetWeak.lock();
+
+        cv::Rect roi(current_hovered_pixel.x - 4, current_hovered_pixel.y - 4, 8, 8);
+        cv::Mat preview_pixel_region = asset->displayed_image(roi);
+
+        if (asset->displayed_image.depth() != 0) {
+            throw "Non-grey scale images are not supported, EXITING...";
+        }
+
+        cv::Mat preview_scaled_region;
+        cv::resize(preview_pixel_region, preview_scaled_region, cv::Size(roi.width * 16, roi.height * 16), 0, 0, cv::INTER_NEAREST);
+
+        // SDL texture
+        //TODO: Move this later to the image renderer
+        cv::cvtColor(preview_scaled_region, preview_scaled_region, cv::COLOR_GRAY2BGR);
+        SDL_Surface *surface = SDL_CreateRGBSurfaceWithFormatFrom(
+            preview_scaled_region.data,
+            preview_scaled_region.cols,
+            preview_scaled_region.rows,
+            preview_scaled_region.channels() * 8,
+            preview_scaled_region.step,
+            SDL_PIXELFORMAT_BGR24
+        );
+
+        SDL_Texture* texture = SDL_CreateTextureFromSurface(Graphics::WindowManager::renderer, surface);
+
+        SDL_FreeSurface(surface);
+
+        ImGui::SetNextWindowPos(ImGui::GetIO().MousePos);
+        ImGui::SetNextWindowSize(ImVec2(0, 0));
+
+        ImVec2 image_pos = ImGui::GetCursorScreenPos();
+        ImVec2 image_size = ImVec2(preview_scaled_region.cols, preview_scaled_region.rows);
+
+        ImGui::BeginTooltip();
+        ImGui::Image((ImTextureID)texture, image_size);
+        ImGui::GetWindowDrawList()->AddRect(image_pos, ImVec2(image_pos.x + image_size.x, image_pos.y + image_size.y), IM_COL32(255, 255, 255, 255), 0.0f, 0, 1.0f);
+        ImGui::Text("p(%d, %d): %d", current_hovered_pixel.x, current_hovered_pixel.y, current_hovered_pixel.intensity);
+        ImGui::EndTooltip();
+    }
 
     if (program::WindowState::controlsState.geoTransformEnabled) {
         // draw a rotation center circle
@@ -125,10 +175,6 @@ void IImagePreviewPanel::draw() {
 
         drawList->PopClipRect();
     }
-
-    assets.push_back(assetWeak);
-    this->handle_events();
-    assets.pop_back();
 }
 
 ImVec2* IImagePreviewPanel::transformImageCorners(ImVec2 position, cv::MatSize size,  cv::Mat transformation) {
@@ -163,24 +209,69 @@ void IImagePreviewPanel::handle_events() {
     const Uint8 *keyState = SDL_GetKeyboardState(NULL);
     bool isImageHovered = ImGui::IsWindowHovered();
     bool spaceHeld = keyState[SDL_SCANCODE_SPACE];
+    bool altHeld = keyState[SDL_SCANCODE_LALT];
 
+    //! TODO: FIX THIS PIECE OF SHIT. THE PIXEL INSPECTOR WORKS RANDOMLY!
     if (isImageHovered) {
-        float scroll = ImGui::GetIO().MouseWheel;
+        //! This only works for one image currently!
+        std::shared_ptr<toolbox::Asset> asset = assets[0].lock();
 
-        if (scroll > 0) {
-            zoom_percentage *= 1.1f;
-        } else if (scroll < 0 && zoom_percentage > 0.3f) {
-            zoom_percentage /= 1.1f;
+        if (asset == nullptr) {
+            return;
         }
 
-        //! This only works for one image currently!
-        if(program::WindowState::controlsState.geoTransformFlags.rotation_center_enabled) {
-            ImVec2 mouse = ImGui::GetIO().MousePos;
-            std::shared_ptr<toolbox::Asset> asset = assets[0].lock();
+        if (altHeld) {
+            pixel_inspector_mode_enabled = true;
 
-            if (asset == nullptr) {
-                return;
+            ImVec2 mousePos = ImGui::GetIO().MousePos;
+
+            // relative mouse position (screen space)
+            mousePos.x -= asset->position.x;
+            mousePos.y -= asset->position.y;
+
+            // scale to image space
+            float scale_x = asset->displayed_image.cols / asset->size.x;
+            float scale_y = asset->displayed_image.rows / asset->size.y;
+            float image_x = mousePos.x * scale_x;
+            float image_y = mousePos.y * scale_y;
+
+            if (asset->displayed_image.depth() != 0) {
+                throw std::runtime_error("unsupported image depth");
             }
+
+            int ix = static_cast<int>(image_x);
+            int iy = static_cast<int>(image_y);
+            std::cout << ix << " " << iy << " : ";
+
+            if (ix >= 0 && iy >= 0 && iy < asset->displayed_image.rows && ix < asset->displayed_image.cols) {
+                current_hovered_pixel = {ix, iy, static_cast<int>(asset->displayed_image.at<uchar>(iy, ix))};
+                std::cout << static_cast<int>(asset->displayed_image.at<uchar>(iy, ix)) << std::endl;
+            }
+        } else {
+            pixel_inspector_mode_enabled = false;
+        }
+
+        if (spaceHeld) {
+            ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+            float scroll = ImGui::GetIO().MouseWheel;
+
+            if (scroll > 0) {
+                zoom_percentage *= 1.1f;
+            } else if (scroll < 0 && zoom_percentage > 0.3f) {
+                zoom_percentage /= 1.1f;
+            }
+    
+            if (ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
+                ImVec2 drag_delta = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left);
+                
+                ImGui::SetScrollX(ImGui::GetScrollX() - drag_delta.x);
+                ImGui::SetScrollY(ImGui::GetScrollY() - drag_delta.y);
+    
+                // forget the "consumed" drag
+                ImGui::ResetMouseDragDelta(ImGuiMouseButton_Left);
+            }
+        } else if(program::WindowState::controlsState.geoTransformFlags.rotation_center_enabled) {
+            ImVec2 mouse = ImGui::GetIO().MousePos;
 
             // relative mouse position (screen space)
             mouse.x -= asset->position.x;
@@ -236,11 +327,7 @@ void IImagePreviewPanel::handle_events() {
             } else if (!free_rotate_switch) {
                 ImGui::SetMouseCursor(ImGuiMouseCursor_Arrow);
             }
-        } else {
-            ImGui::SetMouseCursor(ImGuiMouseCursor_Arrow);
-        }
-
-        if (program::WindowState::controlsState.geoTransformFlags.skew_enabled) {
+        } else if (program::WindowState::controlsState.geoTransformFlags.skew_enabled) {
             if (ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
                 ImGuiIO &io = ImGui::GetIO();
 
@@ -325,9 +412,7 @@ void IImagePreviewPanel::handle_events() {
                 // reset edge held
                 edge_held = false;
             }
-        }
-
-        if (program::WindowState::controlsState.geoTransformFlags.scale_enabled) {
+        } else if (program::WindowState::controlsState.geoTransformFlags.scale_enabled) {
             const Uint8 *keyState = SDL_GetKeyboardState(NULL);
             bool xHeld = keyState[SDL_SCANCODE_X];
             bool yHeld = keyState[SDL_SCANCODE_Y];
@@ -390,20 +475,6 @@ void IImagePreviewPanel::handle_events() {
                     );
                 } else {
                 }
-            }
-        }
-    } else {
-        if (isImageHovered && spaceHeld) {
-            ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
-    
-            if (ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
-                ImVec2 drag_delta = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left);
-                
-                ImGui::SetScrollX(ImGui::GetScrollX() - drag_delta.x);
-                ImGui::SetScrollY(ImGui::GetScrollY() - drag_delta.y);
-    
-                // forget the "consumed" drag
-                ImGui::ResetMouseDragDelta(ImGuiMouseButton_Left);
             }
         } else {
             ImGui::SetMouseCursor(ImGuiMouseCursor_Arrow);
