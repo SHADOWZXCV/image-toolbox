@@ -39,6 +39,20 @@ void IImagePreviewPanel::draw() {
     }
     assetWeak = Graphics::WindowManager::renderPreviewImage(zoom_percentage);
 
+    // Zoom toast: show current zoom percentage briefly when it changes
+    static float s_prev_scale = -1.0f;
+    static double s_toast_until = 0.0;
+    if (std::shared_ptr<toolbox::Asset> asset = assetWeak.lock()) {
+        if (asset->displayed_image.cols > 0 && asset->size.x > 0) {
+            float cur_scale_x = asset->size.x / (float)asset->displayed_image.cols;
+            if (s_prev_scale < 0.0f) s_prev_scale = cur_scale_x;
+            if (fabsf(cur_scale_x - s_prev_scale) > 1e-4f) {
+                s_prev_scale = cur_scale_x;
+                s_toast_until = ImGui::GetTime() + 1.0; // show for 1s
+            }
+        }
+    }
+
     if (pixel_inspector_mode_enabled) {
         //! Let's assume for a minute that ASSET will always exist
         // TODO: FIX IT LATER
@@ -183,6 +197,28 @@ void IImagePreviewPanel::draw() {
         }
 
         drawList->PopClipRect();
+    }
+
+    // Render zoom toast overlay (top-right of preview) if active
+    if (ImGui::GetTime() < s_toast_until) {
+        std::shared_ptr<toolbox::Asset> asset = assetWeak.lock();
+        if (asset && asset->displayed_image.cols > 0 && asset->size.x > 0) {
+            float scale_x = asset->size.x / (float)asset->displayed_image.cols;
+            int percent = (int)std::round(scale_x * 100.0f);
+            ImVec2 winPos = ImGui::GetWindowPos();
+            ImVec2 winSize = ImGui::GetWindowSize();
+            ImGui::SetNextWindowPos(ImVec2(winPos.x + winSize.x - 120.0f, winPos.y + 10.0f));
+            ImGui::SetNextWindowBgAlpha(0.85f);
+            ImGui::Begin("##zoom_toast", nullptr,
+                ImGuiWindowFlags_NoDecoration |
+                ImGuiWindowFlags_AlwaysAutoResize |
+                ImGuiWindowFlags_NoFocusOnAppearing |
+                ImGuiWindowFlags_NoNav |
+                ImGuiWindowFlags_NoMove |
+                ImGuiWindowFlags_NoInputs);
+            ImGui::Text("%s  %d%%", ICON_FA_MAGNIFYING_GLASS, percent);
+            ImGui::End();
+        }
     }
 }
 

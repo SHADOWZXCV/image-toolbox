@@ -6,6 +6,7 @@
 #include "panels/image-preview.hpp"
 #include "panels/assets.hpp"
 #include "panels/tools.hpp"
+#include "panels/status-bar.hpp"
 #include "shared/theme.hpp"
 
 int main() {
@@ -32,6 +33,7 @@ int main() {
     Graphics::WindowManager::register_panel<IImagePreviewPanel>();
     Graphics::WindowManager::register_panel<IAssetsPanel>();
     Graphics::WindowManager::register_panel<IToolsPanel>();
+    Graphics::WindowManager::register_panel<IStatusBarPanel>();
     
     program::ServiceManager::registerService<program::IAcquisitorService>();
 
