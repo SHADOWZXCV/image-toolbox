@@ -44,15 +44,24 @@ void IImagePreviewPanel::draw() {
         // TODO: FIX IT LATER
         std::shared_ptr<toolbox::Asset> asset = assetWeak.lock();
 
-        cv::Rect roi(current_hovered_pixel.x - 4, current_hovered_pixel.y - 4, 8, 8);
-        cv::Mat preview_pixel_region = asset->displayed_image(roi);
-
-        if (asset->displayed_image.depth() != 0) {
-            throw "Non-grey scale images are not supported, EXITING...";
+         if (asset->displayed_image.depth() != CV_8U) {
+            throw std::runtime_error("unsupported image depth");
         }
 
+        // Bounds check before ROI creation
+        if (current_hovered_pixel.x - 4 < 0 ||
+            current_hovered_pixel.y - 4 < 0 ||
+            current_hovered_pixel.x - 4 >= asset->displayed_image.cols ||
+            current_hovered_pixel.y - 4 >= asset->displayed_image.rows)
+        {
+            return; // skip, ROI would be outside image
+        }
+
+        cv::Rect roi(current_hovered_pixel.x - 4, current_hovered_pixel.y - 4, 1, 1);
+        cv::Mat preview_pixel_region = asset->displayed_image(roi);
+
         cv::Mat preview_scaled_region;
-        cv::resize(preview_pixel_region, preview_scaled_region, cv::Size(roi.width * 16, roi.height * 16), 0, 0, cv::INTER_NEAREST);
+        cv::resize(preview_pixel_region, preview_scaled_region, cv::Size(roi.width * 16, roi.height * 16), 0, 0, cv::INTER_LANCZOS4);
 
         // SDL texture
         //TODO: Move this later to the image renderer

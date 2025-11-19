@@ -66,30 +66,24 @@ void IAssetsPanel::draw() {
             if (asset) {
                 // ImVec2(currSize.x -  10, 90)
                 ImGui::BeginChild(asset->path.c_str(), ImVec2(), ImGuiChildFlags_AlwaysAutoResize | ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_Borders, ImGuiWindowFlags_HorizontalScrollbar);
-                ImGui::Text(asset_name.c_str());
+                ImGui::Text("%s", asset_name.c_str());
 
-                if (ImGui::IsItemHovered())
-                {
+                if (ImGui::IsItemHovered()) {
                     ImGui::BeginTooltip();
-
-                    // ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f); // Optional: wrap long text
-                    ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.6f), asset->path.c_str());
-                    // ImGui::PopTextWrapPos();
-
-                    // 5. End the tooltip window
+                    ImGui::Text("%s", asset->path.c_str());
                     ImGui::EndTooltip();
                 }
 
-                ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.6f), "Size: %dx%d", asset->original_image.cols, asset->original_image.rows);
-                ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.6f), "Channels: %d", asset->original_image.channels());
-                ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.6f), "Depth: %s", asset->original_image.depth() == 0 ? "CV_8U" :
-                                                            asset->original_image.depth() == 1 ? "CV_8S" :
-                                                            asset->original_image.depth() == 2 ? "CV_16U" :
-                                                            asset->original_image.depth() == 3 ? "CV_16S" :
-                                                            asset->original_image.depth() == 4 ? "CV_32S" :
-                                                            asset->original_image.depth() == 5 ? "CV_32F" :
-                                                            asset->original_image.depth() == 6 ? "CV_64F" : "Unknown");
-                ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.6f), "Total size in bytes: %d", asset->original_image.total());
+                ImGui::Text("Size: %dx%d", asset->original_image.cols, asset->original_image.rows);
+                ImGui::Text("Channels: %d", asset->original_image.channels());
+                ImGui::Text("Depth: %s", asset->original_image.depth() == 0 ? "CV_8U" :
+                                                    asset->original_image.depth() == 1 ? "CV_8S" :
+                                                    asset->original_image.depth() == 2 ? "CV_16U" :
+                                                    asset->original_image.depth() == 3 ? "CV_16S" :
+                                                    asset->original_image.depth() == 4 ? "CV_32S" :
+                                                    asset->original_image.depth() == 5 ? "CV_32F" :
+                                                    asset->original_image.depth() == 6 ? "CV_64F" : "Unknown");
+                ImGui::Text("Total size in bytes: %d", asset->original_image.total());
                 ImGui::EndChild();
             }
         }
@@ -134,13 +128,17 @@ void IAssetsPanel::draw() {
 
     // ImGui::SeparatorText("Image details");
 
-    ImU32 plot_area_color = IM_COL32(20, 20, 20, 255); // Dark grey for the plot
-    ImU32 frame_color = IM_COL32(30, 30, 30, 0); // Lighter grey for the frame
+    // Use current ImGui theme colors for plot styling
+    ImGuiStyle &style = ImGui::GetStyle();
+    ImVec4 plotBg      = style.Colors[ImGuiCol_ChildBg];
+    ImVec4 frameBg     = style.Colors[ImGuiCol_WindowBg];
+    ImVec4 axisHoverBg = style.Colors[ImGuiCol_TabHovered];
+    ImVec4 barFill     = style.Colors[ImGuiCol_SliderGrab];
 
-    // 2. Push the colors
-    ImPlot::PushStyleColor(ImPlotCol_PlotBg, plot_area_color);
-    ImPlot::PushStyleColor(ImPlotCol_FrameBg, frame_color);
-    ImPlot::PushStyleColor(ImPlotCol_AxisBgHovered, plot_area_color);
+    ImPlot::PushStyleColor(ImPlotCol_PlotBg, plotBg);
+    ImPlot::PushStyleColor(ImPlotCol_FrameBg, frameBg);
+    ImPlot::PushStyleColor(ImPlotCol_AxisBgHovered, axisHoverBg);
+    ImPlot::PushStyleColor(ImPlotCol_Fill, barFill);
 
     float *histogram_data = (float *) hist.data;
     int hist_size = hist.rows;
@@ -155,6 +153,6 @@ void IAssetsPanel::draw() {
         ImPlot::EndPlot();
     }
 
-    ImPlot::PopStyleColor();
-    ImPlot::PopStyleColor();
+    // Pop all 4 colors we pushed
+    ImPlot::PopStyleColor(4);
 }

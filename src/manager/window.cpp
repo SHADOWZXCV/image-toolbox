@@ -50,7 +50,13 @@ bool WindowManager::render_frame() {
     try
     {
         ImGui::Render();
-        SDL_SetRenderDrawColor(WindowManager::renderer, 25, 25, 25, 255); // Dark gray background
+        // Use current ImGui style window background instead of hardcoded dark color
+        ImVec4 winBg = ImGui::GetStyle().Colors[ImGuiCol_WindowBg];
+        SDL_SetRenderDrawColor(WindowManager::renderer,
+            (Uint8)(winBg.x * 255.0f),
+            (Uint8)(winBg.y * 255.0f),
+            (Uint8)(winBg.z * 255.0f),
+            (Uint8)(winBg.w * 255.0f));
         SDL_RenderClear(WindowManager::renderer);
         ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), WindowManager::renderer);
         SDL_RenderPresent(WindowManager::renderer);

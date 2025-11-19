@@ -143,10 +143,9 @@ void IToolsPanel::draw() {
 
     ImGui::Separator();
 
-    ImGui::PushStyleColor(ImGuiCol_Button,        ImVec4(0.0f, 0.0f, 0.0f, 0.0f)); // Transparent
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.6f, 0.9f, 0.4f)); // Bluish
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(0.3f, 0.6f, 0.9f, 0.6f)); // Slightly more opaque blue
-    ImGui::PushStyleColor(ImGuiCol_Border,        ImVec4(0.8f, 0.8f, 0.8f, 0.5f)); // Light gray border
+    ImGui::PushStyleColor(ImGuiCol_Button,        ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.6f, 0.9f, 0.4f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(0.3f, 0.6f, 0.9f, 0.6f));
 
     ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 5.0f);
@@ -289,10 +288,13 @@ void IToolsPanel::draw() {
 
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
     ImVec2 textPos = ImVec2((this->position.x + this->size.x) / 8, this->position.y + this->size.y - 30);
-    draw_list->AddText(textPos, IM_COL32(255,255,255, 255), "Tools");
-    draw_list->AddLine(ImVec2(this->position.x + 10, textPos.y - 15), ImVec2(this->position.x + this->size.x - 10, textPos.y - 15), IM_COL32(255, 255, 255, 80));
+    ImGuiStyle& style = ImGui::GetStyle();
+    ImU32 textCol = ImGui::ColorConvertFloat4ToU32(style.Colors[ImGuiCol_Text]);
+    ImU32 sepCol  = ImGui::ColorConvertFloat4ToU32(style.Colors[ImGuiCol_Separator]);
+    draw_list->AddText(textPos, textCol, "Tools");
+    draw_list->AddLine(ImVec2(this->position.x + 10, textPos.y - 15), ImVec2(this->position.x + this->size.x - 10, textPos.y - 15), sepCol);
 
-    ImGui::PopStyleColor(4);
+    ImGui::PopStyleColor(3);
     ImGui::PopStyleVar(2);
     this->handle_events();
 }

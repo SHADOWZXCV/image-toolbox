@@ -6,6 +6,7 @@
 #include "panels/image-preview.hpp"
 #include "panels/assets.hpp"
 #include "panels/tools.hpp"
+#include "shared/theme.hpp"
 
 int main() {
     // Initialize SDL
@@ -35,6 +36,7 @@ int main() {
     program::ServiceManager::registerService<program::IAcquisitorService>();
 
     Graphics::load_fonts();
+    theme::ApplyLightTheme();
 
     // Main loop
     while (running) {
