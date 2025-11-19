@@ -30,6 +30,18 @@ namespace program {
             BoolVec2 flip;
             BoolVec2 scale;
         } geoTransform;
+
+        // ROI / Crop selection controls
+        struct SelectionFlags {
+            bool roi_enabled = false;   // marquee selection mode
+            bool crop_enabled = false;  // crop mode (uses marquee)
+        } selectionFlags;
+        struct SelectionState {
+            bool is_dragging = false;   // currently dragging selection
+            bool has_roi = false;       // a valid ROI exists
+            ImVec2 start_img{0,0};      // ROI start in image coordinates
+            ImVec2 end_img{0,0};        // ROI end in image coordinates
+        } selection;
     };
 
     struct WindowState {

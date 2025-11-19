@@ -15,5 +15,11 @@ namespace toolbox {
             const char* op_name() const override { return "Contrast Stretch"; }
             void apply(toolbox::Asset&) override;
         };
+        struct Crop : public Transformation {
+            int x, y, w, h; // ROI in image coordinates
+            Crop(int ix, int iy, int iw, int ih) : x(ix), y(iy), w(iw), h(ih) {}
+            void apply(toolbox::Asset &asset) override;
+            const char* op_name() const override { return "Crop"; }
+        };
     };
 }

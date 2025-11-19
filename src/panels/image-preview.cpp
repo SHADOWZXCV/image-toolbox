@@ -1,4 +1,5 @@
 #include "panels/image-preview.hpp"
+#include "renderer/transformations/enhance.hpp"
 #include <stdexcept>
 
 float zoom_percentage = 0.6f;
@@ -48,7 +49,7 @@ void IImagePreviewPanel::draw() {
             if (s_prev_scale < 0.0f) s_prev_scale = cur_scale_x;
             if (fabsf(cur_scale_x - s_prev_scale) > 1e-4f) {
                 s_prev_scale = cur_scale_x;
-                s_toast_until = ImGui::GetTime() + 1.0; // show for 1s
+                s_toast_until = ImGui::GetTime() + .2; // show for 0.2s
             }
         }
     }
@@ -199,6 +200,27 @@ void IImagePreviewPanel::draw() {
         drawList->PopClipRect();
     }
 
+    // Draw ROI marquee if present or dragging
+    if (std::shared_ptr<toolbox::Asset> asset = assetWeak.lock()) {
+        auto &sel = program::WindowState::controlsState.selection;
+        if (program::WindowState::controlsState.selectionFlags.roi_enabled || sel.is_dragging || sel.has_roi) {
+            if (asset && asset->displayed_image.cols > 0 && asset->size.x > 0) {
+                float sx = asset->size.x / (float)asset->displayed_image.cols;
+                float sy = asset->size.y / (float)asset->displayed_image.rows;
+                ImVec2 a = ImVec2(std::min(sel.start_img.x, sel.end_img.x), std::min(sel.start_img.y, sel.end_img.y));
+                ImVec2 b = ImVec2(std::max(sel.start_img.x, sel.end_img.x), std::max(sel.start_img.y, sel.end_img.y));
+                ImVec2 p0 = ImVec2(asset->position.x + a.x * sx, asset->position.y + a.y * sy);
+                ImVec2 p1 = ImVec2(asset->position.x + b.x * sx, asset->position.y + b.y * sy);
+
+                ImDrawList *dl = ImGui::GetWindowDrawList();
+                ImU32 col = ImGui::GetColorU32(ImGui::GetStyle().Colors[ImGuiCol_CheckMark]);
+                ImU32 fill = IM_COL32(0,0,0,60);
+                dl->AddRectFilled(p0, p1, fill, 0.0f);
+                dl->AddRect(p0, p1, col, 0.0f, 0, 2.0f);
+            }
+        }
+    }
+
     // Render zoom toast overlay (top-right of preview) if active
     if (ImGui::GetTime() < s_toast_until) {
         std::shared_ptr<toolbox::Asset> asset = assetWeak.lock();
@@ -262,6 +284,60 @@ void IImagePreviewPanel::handle_events() {
         std::shared_ptr<toolbox::Asset> asset = assets[0].lock();
 
         if (asset == nullptr) {
+            return;
+        }
+
+        // ROI / Crop selection handling
+        if (program::WindowState::controlsState.selectionFlags.roi_enabled || program::WindowState::controlsState.selectionFlags.crop_enabled) {
+            ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+
+            // Convert mouse to image coords helper
+            auto mouse_to_image = [&](ImVec2 m)->ImVec2{
+                ImVec2 rel = ImVec2(m.x - asset->position.x, m.y - asset->position.y);
+                float sx = asset->displayed_image.cols / asset->size.x;
+                float sy = asset->displayed_image.rows / asset->size.y;
+                return ImVec2(rel.x * sx, rel.y * sy);
+            };
+
+            ImVec2 mouse = ImGui::GetIO().MousePos;
+            bool inside = mouse.x >= asset->position.x && mouse.x <= asset->position.x + asset->size.x &&
+                          mouse.y >= asset->position.y && mouse.y <= asset->position.y + asset->size.y;
+
+            auto &flags = program::WindowState::controlsState.selectionFlags;
+            auto &sel   = program::WindowState::controlsState.selection;
+
+            if (inside && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+                sel.is_dragging = true;
+                sel.start_img = mouse_to_image(mouse);
+                sel.end_img = sel.start_img;
+                sel.has_roi = false;
+            }
+            if (sel.is_dragging && ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
+                sel.end_img = mouse_to_image(mouse);
+            }
+            if (sel.is_dragging && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+                sel.is_dragging = false;
+                sel.has_roi = true;
+
+                if (flags.crop_enabled) {
+                    // Compute integer ROI and apply crop
+                    int x0 = (int)std::floor(std::min(sel.start_img.x, sel.end_img.x));
+                    int y0 = (int)std::floor(std::min(sel.start_img.y, sel.end_img.y));
+                    int x1 = (int)std::ceil (std::max(sel.start_img.x, sel.end_img.x));
+                    int y1 = (int)std::ceil (std::max(sel.start_img.y, sel.end_img.y));
+                    int w = std::max(0, x1 - x0);
+                    int h = std::max(0, y1 - y0);
+                    if (w > 0 && h > 0) {
+                        toolbox::OpenCVProcessor::process<toolbox::Enahnce::Crop>(*asset, x0, y0, w, h);
+                    }
+                    // Reset selection after crop
+                    flags.crop_enabled = false;
+                    flags.roi_enabled = false;
+                    program::WindowState::controlsState.selection = {};
+                }
+            }
+
+            // When in selection modes, skip other interactions
             return;
         }
 

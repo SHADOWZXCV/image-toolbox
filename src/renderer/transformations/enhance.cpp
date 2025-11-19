@@ -31,3 +31,22 @@ void toolbox::Enahnce::ContrastStretch::apply(toolbox::Asset &asset) {
         }
     }
 }
+
+void toolbox::Enahnce::Crop::apply(toolbox::Asset &asset) {
+    // Clamp ROI to image bounds and enforce positive size
+    int img_w = asset.base_image.cols;
+    int img_h = asset.base_image.rows;
+    int x0 = std::max(0, std::min(x, img_w - 1));
+    int y0 = std::max(0, std::min(y, img_h - 1));
+    int x1 = std::max(0, std::min(x + w, img_w));
+    int y1 = std::max(0, std::min(y + h, img_h));
+    int rw = std::max(0, x1 - x0);
+    int rh = std::max(0, y1 - y0);
+    if (rw <= 0 || rh <= 0) return;
+
+    cv::Rect roi(x0, y0, rw, rh);
+    asset.base_image = asset.base_image(roi).clone();
+
+    // Reset transformation since image space changed
+    asset.transformation = cv::Mat::eye(3, 3, CV_32F);
+}

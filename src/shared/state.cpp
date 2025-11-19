@@ -52,6 +52,33 @@ void program::handleSDLEvents(bool *running) {
                     }
                 }
             }
+
+            // Toggle ROI selection (M), Crop mode (C), and cancel (Esc)
+            if (event.key.keysym.sym == SDLK_m) {
+                // Toggle marquee selection
+                WindowState::controlsState.selectionFlags.roi_enabled = !WindowState::controlsState.selectionFlags.roi_enabled;
+                if (!WindowState::controlsState.selectionFlags.roi_enabled) {
+                    WindowState::controlsState.selectionFlags.crop_enabled = false;
+                    WindowState::controlsState.selection = {};
+                } else {
+                    WindowState::controlsState.selection.is_dragging = false;
+                    WindowState::controlsState.selection.has_roi = false;
+                }
+            }
+            if (event.key.keysym.sym == SDLK_c) {
+                // Toggle crop mode; implies ROI selection mode
+                bool now = !WindowState::controlsState.selectionFlags.crop_enabled;
+                WindowState::controlsState.selectionFlags.crop_enabled = now;
+                WindowState::controlsState.selectionFlags.roi_enabled = now;
+                WindowState::controlsState.selection.is_dragging = false;
+                WindowState::controlsState.selection.has_roi = false;
+            }
+            if (event.key.keysym.sym == SDLK_ESCAPE) {
+                // Cancel selection/crop
+                WindowState::controlsState.selectionFlags.roi_enabled = false;
+                WindowState::controlsState.selectionFlags.crop_enabled = false;
+                WindowState::controlsState.selection = {};
+            }
         }
         
         if (event.type == SDL_DROPFILE) {
