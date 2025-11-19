@@ -2,10 +2,13 @@
 #include <opencv2/opencv.hpp>
 #include "acquisitor/acquisitor.hpp"
 #include "shared/state.hpp"
+#include <typeinfo>
 
 namespace toolbox {
     struct Transformation {
+        virtual ~Transformation() = default;
         virtual void apply(toolbox::Asset &) = 0;
+        virtual const char* op_name() const = 0;
     };
 
     class OpenCVProcessor {
@@ -18,6 +21,7 @@ namespace toolbox {
             transform.apply(asset);
             asset.dirty = true;
             program::WindowState::textureUpdate = true;
+            asset.captureSnapshot(transform.op_name());
         }
 
         static void buildFinalImageFromAsset(toolbox::Asset &asset) {

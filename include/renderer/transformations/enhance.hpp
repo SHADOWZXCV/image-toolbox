@@ -4,6 +4,7 @@
 namespace toolbox {
     struct Enahnce {
         struct HistogramEqualize: public Transformation {
+            const char* op_name() const override { return "Histogram Equalization"; }
             void apply(toolbox::Asset&) override;
         };
         struct ContrastStretch: public Transformation {
@@ -11,6 +12,7 @@ namespace toolbox {
             ContrastStretch(short r1, short r2, short s1, short s2)
             : r1(r1), r2(r2), s1(s1), s2(s2) {}
 
+            const char* op_name() const override { return "Contrast Stretch"; }
             void apply(toolbox::Asset&) override;
         };
     };

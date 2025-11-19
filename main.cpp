@@ -36,7 +36,7 @@ int main() {
     program::ServiceManager::registerService<program::IAcquisitorService>();
 
     Graphics::load_fonts();
-    theme::ApplyLightTheme();
+    theme::ApplyDarkTheme();
 
     // Main loop
     while (running) {

@@ -1,4 +1,5 @@
 #include "panels/tools.hpp"
+#include <cmath>
 
 void IToolsPanel::pre_draw() {
     // set internal state
@@ -10,9 +11,34 @@ void IToolsPanel::pre_draw() {
         return;
     }
 
+    // Sync UI state with current asset transformation
     rotate_center[0] = asset->rotation_center.x;
     rotate_center[1] = asset->rotation_center.y;
-    rotate_angle = asset->rotation_angle;
+
+    // Decompose 2x3 affine matrix [ a b tx ; c d ty ]
+    cv::Mat M = asset->transformation;
+    if (M.rows == 3 && M.cols == 3) {
+        float a = M.at<float>(0,0);
+        float b = M.at<float>(0,1);
+        float c = M.at<float>(1,0);
+        float d = M.at<float>(1,1);
+        float tx = M.at<float>(0,2);
+        float ty = M.at<float>(1,2);
+
+        // Scale factors
+        float sx = std::sqrt(a*a + b*b);
+        float sy = std::sqrt(c*c + d*d);
+        // Rotation in degrees (approx, ignoring shear)
+        float angle_deg = std::atan2(b, a) * 180.0f / 3.14159265f;
+
+        // Update UI values and their "prev" counterparts so deltas start at zero
+        transformation_x = prev_transformation_x = tx;
+        transformation_y = prev_transformation_y = ty;
+        scale_x = prev_scale_x = (sx == 0 ? 1.0f : sx);
+        scale_y = prev_scale_y = (sy == 0 ? 1.0f : sy);
+        scale_same_ratio = prev_scale_same_ratio = (scale_aspect_ratio_checked ? (scale_x + scale_y) * 0.5f : scale_same_ratio);
+        rotate_angle = prev_rotate_angle = angle_deg;
+    }
 }
 
 void IToolsPanel::handle_events() {
