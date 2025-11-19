@@ -119,13 +119,14 @@ std::weak_ptr<toolbox::Asset> WindowManager::renderPreviewImage(float zoom_perce
             program::WindowState::assets.clear();
             program::WindowState::assets.push_back(asset);
             program::WindowState::newAsset = false;
+
+            // Only reset scroll and default zoom when a brand-new asset loads
+            ImGui::SetScrollX(0.0f);
+            ImGui::SetScrollY(0.0f);
+            zoom_percentage = 0.6f;
         }
 
         toolbox::ImageRenderer::buildSDLTexture(WindowManager::renderer, *asset);
-
-        ImGui::SetScrollX(0.0f);
-        ImGui::SetScrollY(0.0f);
-        zoom_percentage = 0.6f;
 
         if (program::WindowState::textureUpdate) {
             program::WindowState::textureUpdate = false;
@@ -141,6 +142,10 @@ std::weak_ptr<toolbox::Asset> WindowManager::renderPreviewImage(float zoom_perce
         float scale = std::min(max_w / asset->displayed_image.cols, max_h / asset->displayed_image.rows);
         ImVec2 size = ImVec2(asset->displayed_image.cols * scale, asset->displayed_image.rows * scale);
         ImVec2 position = ImVec2((width - size.x) / 2, (height - size.y) / 2);
+
+        // Prevent negative offsets when image is larger than view
+        if (position.x < 0.0f) position.x = 0.0f;
+        if (position.y < 0.0f) position.y = 0.0f;
 
         ImVec2 window = ImGui::GetWindowPos();
 
