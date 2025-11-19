@@ -1,7 +1,7 @@
 #include "renderer/transformations/enhance.hpp"
 
 void toolbox::Enahnce::HistogramEqualize::apply(toolbox::Asset &asset) {
-    cv::equalizeHist(asset.original_image, asset.original_image);
+    cv::equalizeHist(asset.base_image, asset.base_image);
 }
 
 void toolbox::Enahnce::ContrastStretch::apply(toolbox::Asset &asset) {
@@ -12,9 +12,9 @@ void toolbox::Enahnce::ContrastStretch::apply(toolbox::Asset &asset) {
     float beta  = ((r2 - r1) != 0) ? (float(s2 - s1) / (r2 - r1)) : 0;
     float gamma = (r2 != 255) ? (float(255 - s2) / (255 - r2)) : 0;
 
-    for (int i = 0; i < asset.original_image.rows; i++) {
-        for (int j = 0; j < asset.original_image.cols; j++) {
-            uchar intensity = asset.original_image.at<uchar>(i, j);
+    for (int i = 0; i < asset.base_image.rows; i++) {
+        for (int j = 0; j < asset.base_image.cols; j++) {
+            uchar intensity = asset.base_image.at<uchar>(i, j);
             int new_intensity = 0;
 
             if (intensity >= 0 && intensity < r1) {
@@ -27,7 +27,7 @@ void toolbox::Enahnce::ContrastStretch::apply(toolbox::Asset &asset) {
                 new_intensity = 255;
             }
 
-            asset.original_image.at<uchar>(i, j) = cv::saturate_cast<uchar>(new_intensity);
+            asset.base_image.at<uchar>(i, j) = cv::saturate_cast<uchar>(new_intensity);
         }
     }
 }

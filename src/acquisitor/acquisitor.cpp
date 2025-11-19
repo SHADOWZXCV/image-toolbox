@@ -39,7 +39,8 @@ std::shared_ptr<toolbox::Asset> Acquisitor::load_image(char *path) {
 
         Acquisitor::assets[path] = std::move(asset);
 
-        // Set it to grey
+        // Initialize history, then apply initial operations (e.g., grayscale) to base_image
+        Acquisitor::assets[path]->initHistory();
         toolbox::OpenCVProcessor::process<toolbox::GreyTransformation>(*Acquisitor::assets[path].get());
 
         return Acquisitor::assets[path];

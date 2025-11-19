@@ -25,7 +25,7 @@ namespace toolbox {
                 return;
 
             cv::Mat M_2x3 = asset.transformation(cv::Rect(0, 0, 3, 2));
-            cv::warpAffine(asset.original_image, asset.displayed_image, M_2x3, asset.original_image.size());
+            cv::warpAffine(asset.base_image, asset.displayed_image, M_2x3, asset.base_image.size());
 
             asset.dirty = false;
         }

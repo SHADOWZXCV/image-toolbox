@@ -31,6 +31,28 @@ void program::handleSDLEvents(bool *running) {
         ImGui_ImplSDL2_ProcessEvent(&event);
         if (event.type == SDL_QUIT)
             *running = false;
+        if (event.type == SDL_KEYDOWN) {
+            const Uint8* keyState = SDL_GetKeyboardState(NULL);
+            bool ctrl = (SDL_GetModState() & KMOD_CTRL) != 0;
+            bool shift = (SDL_GetModState() & KMOD_SHIFT) != 0;
+            if (ctrl && event.key.keysym.sym == SDLK_z) {
+                if (shift) {
+                    // Redo
+                    if (auto asset = program::getChosenAsset()) {
+                        if (asset->redo()) {
+                            program::WindowState::textureUpdate = true;
+                        }
+                    }
+                } else {
+                    // Undo
+                    if (auto asset = program::getChosenAsset()) {
+                        if (asset->undo()) {
+                            program::WindowState::textureUpdate = true;
+                        }
+                    }
+                }
+            }
+        }
         
         if (event.type == SDL_DROPFILE) {
             char* droppedFilePath = event.drop.file;
