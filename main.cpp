@@ -1,4 +1,5 @@
 #include <iostream>
+#include "external/patch/imgui.hpp"
 #include "manager/window.hpp"
 #include "manager/state.hpp"
 #include "services/acquisitor.hpp"
