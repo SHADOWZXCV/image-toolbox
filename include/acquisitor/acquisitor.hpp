@@ -24,6 +24,9 @@ namespace toolbox {
         ImVec2 size;
         ImVec2 rotation_center;
         float rotation_angle;
+        // Persistent transform components
+        ImVec2 translation{0,0};
+        ImVec2 scale_factors{1,1};
         // state
         cv::Mat transformation;
         bool dirty = false;
@@ -39,6 +42,14 @@ namespace toolbox {
             int roi_y = 0;
             int roi_w = 0;
             int roi_h = 0;
+            // Persistent geometric components for accurate UI restoration
+            float trans_x = 0.0f;
+            float trans_y = 0.0f;
+            float scale_x = 1.0f;
+            float scale_y = 1.0f;
+            float rot_center_x = 0.0f;
+            float rot_center_y = 0.0f;
+            float rot_angle = 0.0f; // absolute angle
             struct PointParamsCopy {
                 bool has_power = false;
                 float gamma = 1.0f;
@@ -78,7 +89,10 @@ namespace toolbox {
             this->original_image = image;
             this->base_image = image;
             this->transformation = cv::Mat::eye(3, 3, CV_32F);
-
+            this->translation = ImVec2(0,0);
+            this->scale_factors = ImVec2(1,1);
+            this->rotation_center = ImVec2(0,0);
+            this->rotation_angle = 0.0f;
             return true;
         }
 
@@ -108,6 +122,14 @@ namespace toolbox {
                 s.timestamp = now;
                 s.applied_to_roi = applied_to_roi;
                 s.roi_x = rx; s.roi_y = ry; s.roi_w = rw; s.roi_h = rh;
+                // copy persistent geometric values
+                s.trans_x = translation.x;
+                s.trans_y = translation.y;
+                s.scale_x = scale_factors.x;
+                s.scale_y = scale_factors.y;
+                s.rot_center_x = rotation_center.x;
+                s.rot_center_y = rotation_center.y;
+                s.rot_angle = rotation_angle;
                 s.point_params.has_power = pointParams.has_power;
                 s.point_params.gamma = pointParams.gamma;
                 s.point_params.log_used = pointParams.log_used;
@@ -128,6 +150,13 @@ namespace toolbox {
                 s.timestamp = now;
                 s.applied_to_roi = applied_to_roi;
                 s.roi_x = rx; s.roi_y = ry; s.roi_w = rw; s.roi_h = rh;
+                s.trans_x = translation.x;
+                s.trans_y = translation.y;
+                s.scale_x = scale_factors.x;
+                s.scale_y = scale_factors.y;
+                s.rot_center_x = rotation_center.x;
+                s.rot_center_y = rotation_center.y;
+                s.rot_angle = rotation_angle;
                 s.point_params.has_power = pointParams.has_power;
                 s.point_params.gamma = pointParams.gamma;
                 s.point_params.log_used = pointParams.log_used;
@@ -154,6 +183,10 @@ namespace toolbox {
             base_image = s.base_image.clone();
             transformation = s.transformation.clone();
             dirty = true;
+            translation = ImVec2(s.trans_x, s.trans_y);
+            scale_factors = ImVec2(s.scale_x, s.scale_y);
+            rotation_center = ImVec2(s.rot_center_x, s.rot_center_y);
+            rotation_angle = s.rot_angle;
             // restore live point params for UI sync
             pointParams.has_power = s.point_params.has_power;
             pointParams.gamma = s.point_params.gamma;
@@ -177,6 +210,10 @@ namespace toolbox {
             base_image = s.base_image.clone();
             transformation = s.transformation.clone();
             dirty = true;
+            translation = ImVec2(s.trans_x, s.trans_y);
+            scale_factors = ImVec2(s.scale_x, s.scale_y);
+            rotation_center = ImVec2(s.rot_center_x, s.rot_center_y);
+            rotation_angle = s.rot_angle;
             pointParams.has_power = s.point_params.has_power;
             pointParams.gamma = s.point_params.gamma;
             pointParams.log_used = s.point_params.log_used;

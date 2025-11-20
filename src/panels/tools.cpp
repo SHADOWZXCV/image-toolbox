@@ -15,30 +15,13 @@ void IToolsPanel::pre_draw() {
     rotate_center[0] = asset->rotation_center.x;
     rotate_center[1] = asset->rotation_center.y;
 
-    // Decompose 2x3 affine matrix [ a b tx ; c d ty ]
-    cv::Mat M = asset->transformation;
-    if (M.rows == 3 && M.cols == 3) {
-        float a = M.at<float>(0,0);
-        float b = M.at<float>(0,1);
-        float c = M.at<float>(1,0);
-        float d = M.at<float>(1,1);
-        float tx = M.at<float>(0,2);
-        float ty = M.at<float>(1,2);
-
-        // Scale factors
-        float sx = std::sqrt(a*a + b*b);
-        float sy = std::sqrt(c*c + d*d);
-        // Rotation in degrees (approx, ignoring shear)
-        float angle_deg = std::atan2(b, a) * 180.0f / 3.14159265f;
-
-        // Update UI values and their "prev" counterparts so deltas start at zero
-        transformation_x = prev_transformation_x = tx;
-        transformation_y = prev_transformation_y = ty;
-        scale_x = prev_scale_x = (sx == 0 ? 1.0f : sx);
-        scale_y = prev_scale_y = (sy == 0 ? 1.0f : sy);
-        scale_same_ratio = prev_scale_same_ratio = (scale_aspect_ratio_checked ? (scale_x + scale_y) * 0.5f : scale_same_ratio);
-        rotate_angle = prev_rotate_angle = angle_deg;
-    }
+    // Use persistent components (avoid decomposition drift)
+    transformation_x = prev_transformation_x = asset->translation.x;
+    transformation_y = prev_transformation_y = asset->translation.y;
+    scale_x = prev_scale_x = asset->scale_factors.x <= 0 ? 1.0f : asset->scale_factors.x;
+    scale_y = prev_scale_y = asset->scale_factors.y <= 0 ? 1.0f : asset->scale_factors.y;
+    scale_same_ratio = prev_scale_same_ratio = (scale_aspect_ratio_checked ? (scale_x + scale_y) * 0.5f : scale_same_ratio);
+    rotate_angle = prev_rotate_angle = asset->rotation_angle;
     // Sync point processing UI from asset snapshot params ONLY when popup not open
     // This allows user to adjust sliders without them being reset every frame.
     if (!buttonPressed(POINT_PROCESSING_BUTTON)) {
@@ -82,38 +65,35 @@ void IToolsPanel::handle_events() {
                 float x_val = transformation_x - prev_transformation_x;
                 prev_transformation_x = transformation_x;
                 translation[0] = x_val;
+                asset->translation.x += x_val;
                 slider_transform_x_changed = false;
             }
             if (slider_transform_y_changed) {
                 float y_val = transformation_y - prev_transformation_y;
                 prev_transformation_y = transformation_y;
                 translation[1] = y_val;
+                asset->translation.y += y_val;
                 slider_transform_y_changed = false;
             }
 
             if (rotate_center_changed || rotate_angle_changed) {
                 asset->rotation_center.x = rotate_center[0];
                 asset->rotation_center.y = rotate_center[1];
-                asset->rotation_angle = rotate_angle - prev_rotate_angle;
+                float delta_angle = rotate_angle - prev_rotate_angle;
                 prev_rotate_angle = rotate_angle;
-
-                if (asset) {
-                    toolbox::OpenCVProcessor::process<toolbox::GeometricTransformation::Rotation>(
-                        *asset,
-                        asset->rotation_center.x,
-                        asset->rotation_center.y,
-                        asset->rotation_angle
-                    );
-                }
-
+                asset->rotation_angle = rotate_angle;
+                toolbox::OpenCVProcessor::process<toolbox::GeometricTransformation::Rotation>(
+                    *asset,
+                    asset->rotation_center.x,
+                    asset->rotation_center.y,
+                    delta_angle
+                );
                 rotate_center_changed = false;
                 rotate_angle_changed = false;
             }
 
             if (translation[0] || translation[1]) {
-                if (asset) {
-                    toolbox::OpenCVProcessor::process<toolbox::GeometricTransformation::Translate>(*asset, translation[0], translation[1]);
-                }
+                toolbox::OpenCVProcessor::process<toolbox::GeometricTransformation::Translate>(*asset, translation[0], translation[1]);
             }
 
             program::WindowState::controlsState.geoTransformFlags.rotation_center_enabled = rotate_center_mouse_checked;
@@ -136,19 +116,21 @@ void IToolsPanel::handle_events() {
             if (scale_x_slider_changed || scale_y_slider_changed) {
                 float delta_scale_x = prev_scale_x ? scale_x / prev_scale_x : 1;
                 float delta_scale_y = prev_scale_y ? scale_y / prev_scale_y : 1;
-                
                 prev_scale_x = scale_x;
                 prev_scale_y = scale_y;
-
+                asset->scale_factors.x = scale_x;
+                asset->scale_factors.y = scale_y;
                 toolbox::OpenCVProcessor::process<toolbox::GeometricTransformation::Scale>(*asset, delta_scale_x, delta_scale_y);
             } else if (scale_same_ratio_slider_changed) {
                 float delta_scale = prev_scale_same_ratio ? scale_same_ratio / prev_scale_same_ratio : 1;
-
                 prev_scale_same_ratio = scale_same_ratio;
+                asset->scale_factors.x = scale_same_ratio;
+                asset->scale_factors.y = scale_same_ratio;
                 toolbox::OpenCVProcessor::process<toolbox::GeometricTransformation::Scale>(*asset, delta_scale, delta_scale);
             }
 
             program::WindowState::controlsState.geoTransformFlags.scale_enabled = scale_mouse_checked;
+            program::WindowState::controlsState.geoTransformFlags.translate_enabled = translate_mouse_checked;
         }
         // Point processing events
         if (buttonPressed(POINT_PROCESSING_BUTTON) && asset) {
@@ -332,17 +314,25 @@ void IToolsPanel::draw() {
         ImGui::EndDisabled();
 
         bool mouseScalePressed = ImGui::Checkbox("Mouse Scale", &scale_mouse_checked);
+        bool mouseTranslatePressed = ImGui::Checkbox("Mouse Translate", &translate_mouse_checked);
 
         // can be converted to a binary masker instead of all these if conditions, but later :/
         if (mouseSkewPressed) {
             rotate_center_mouse_checked = false;
             scale_mouse_checked = false;
+            translate_mouse_checked = false;
         } else if (mouseRotatePressed) {
             skew_checked = false;
             scale_mouse_checked = false;
+            translate_mouse_checked = false;
         } else if (mouseScalePressed) {
             rotate_center_mouse_checked = false;
             skew_checked = false;
+            translate_mouse_checked = false;
+        } else if (mouseTranslatePressed) {
+            rotate_center_mouse_checked = false;
+            skew_checked = false;
+            scale_mouse_checked = false;
         }
 
         ImGui::End();

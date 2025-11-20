@@ -65,6 +65,7 @@ struct IToolsPanel : public IPanel {
         short contrast_s2 = 0;
         float prev_scale_same_ratio = 1.0f;
         bool scale_mouse_checked = false;
+        bool translate_mouse_checked = false;
         bool scale_x_slider_changed = false;
         bool scale_y_slider_changed = false;
         bool scale_same_ratio_slider_changed = false;

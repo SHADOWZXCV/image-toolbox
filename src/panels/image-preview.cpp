@@ -145,8 +145,6 @@ void IImagePreviewPanel::draw() {
             positions[i].y = asset->position.y + positions[i].y * scale_y;
         }
 
-        drawList->PushClipRect(asset->position, ImVec2(asset->position.x + asset->size.x, asset->position.y + asset->size.y), true);
-
         drawList->AddLine(positions[0], positions[1], IM_COL32_WHITE, 1);
         drawList->AddLine(positions[1], positions[2], IM_COL32_WHITE, 1);
         drawList->AddLine(positions[2], positions[3], IM_COL32_WHITE, 1);
@@ -197,7 +195,7 @@ void IImagePreviewPanel::draw() {
                         IM_COL32_WHITE);
         }
 
-        drawList->PopClipRect();
+        // Removed clipping to allow seeing boundaries even when outside image view
     }
 
     // Draw ROI marquee if present or dragging
@@ -531,6 +529,22 @@ void IImagePreviewPanel::handle_events() {
                 // reset edge held
                 edge_held = false;
             }
+        } else if (program::WindowState::controlsState.geoTransformFlags.translate_enabled) {
+            if (ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
+                std::shared_ptr<toolbox::Asset> asset = assetWeak.lock();
+                if (!asset) return;
+                ImVec2 delta = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left);
+                ImGui::ResetMouseDragDelta(ImGuiMouseButton_Left);
+                // screen -> image space
+                float sx = asset->displayed_image.cols / asset->size.x;
+                float sy = asset->displayed_image.rows / asset->size.y;
+                float dx = delta.x * sx;
+                float dy = delta.y * sy;
+                asset->translation.x += dx;
+                asset->translation.y += dy;
+                toolbox::OpenCVProcessor::process<toolbox::GeometricTransformation::Translate>(*asset, dx, dy);
+            }
+            ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
         } else if (program::WindowState::controlsState.geoTransformFlags.scale_enabled) {
             const Uint8 *keyState = SDL_GetKeyboardState(NULL);
             bool xHeld = keyState[SDL_SCANCODE_X];
@@ -566,29 +580,43 @@ void IImagePreviewPanel::handle_events() {
 
                 // Change to constants added from a constants file somewhere
                 // TODO: Store these somewhere on global state so that the tools file can use these
-                float scale_x = 1.0f + mouse_skew_delta.x * 0.01f;
-                float scale_y = 1.0f + mouse_skew_delta.y * 0.01f;
+                float delta_scale_x = 1.0f + mouse_skew_delta.x * 0.01f;
+                float delta_scale_y = 1.0f + mouse_skew_delta.y * 0.01f;
 
+                // Apply scaling. Processor expects delta factors; update persistent absolute factors first.
                 if (ctrlHeld) {
-                    float avg_scale = (scale_x + scale_y) / 2.0f;
+                    float avg_delta = (delta_scale_x + delta_scale_y) * 0.5f;
+                    asset->scale_factors.x *= avg_delta;
+                    asset->scale_factors.y *= avg_delta;
                     toolbox::OpenCVProcessor::process<toolbox::GeometricTransformation::Scale>(
                         *asset,
-                        avg_scale,
-                        avg_scale
+                        avg_delta,
+                        avg_delta
                     );
                 } else if (xHeld) {
+                    asset->scale_factors.x *= delta_scale_x;
                     toolbox::OpenCVProcessor::process<toolbox::GeometricTransformation::Scale>(
                         *asset,
-                        scale_x,
-                        1
+                        delta_scale_x,
+                        1.0f
                     );
                 } else if (yHeld) {
+                    asset->scale_factors.y *= delta_scale_y;
                     toolbox::OpenCVProcessor::process<toolbox::GeometricTransformation::Scale>(
                         *asset,
-                        1,
-                        scale_y
+                        1.0f,
+                        delta_scale_y
                     );
                 } else {
+                    // Uniform scale if no modifier keys held (use X delta only)
+                    float uniform_delta = delta_scale_x;
+                    asset->scale_factors.x *= uniform_delta;
+                    asset->scale_factors.y *= uniform_delta;
+                    toolbox::OpenCVProcessor::process<toolbox::GeometricTransformation::Scale>(
+                        *asset,
+                        uniform_delta,
+                        uniform_delta
+                    );
                 }
             }
         } else {

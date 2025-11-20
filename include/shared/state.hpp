@@ -24,6 +24,7 @@ namespace program {
             bool skew_enabled;
             bool flip_command_enabled;
             bool scale_enabled;
+            bool translate_enabled; // mouse translation
         } geoTransformFlags;
         struct GeoTransformState {
             ImVec2 rotation_center;
