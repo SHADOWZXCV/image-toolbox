@@ -9,11 +9,13 @@
 #include "renderer/processor.hpp"
 #include "renderer/transformations/enhance.hpp"
 #include "renderer/transformations/geometric.hpp"
+#include "renderer/transformations/point.hpp"
 
 enum ToolsButtons {
     EQUALIZE_BUTTON = 0,
     CONTRAST_BUTTON = 1,
-    GEO_TRANSFORMATION_BUTTON = 2
+    GEO_TRANSFORMATION_BUTTON = 2,
+    POINT_PROCESSING_BUTTON = 3
 };
 
 struct IToolsPanel : public IPanel {
@@ -42,6 +44,9 @@ struct IToolsPanel : public IPanel {
     
         // state
         uint32_t buttonsPressed = 0;
+        int activePopup = -1; // -1 none, else ToolsButtons value
+        ImVec2 buttonMin[4]{}; // store last frame button bounds for positioning popups
+        ImVec2 buttonMax[4]{};
         float transformation_x = 0.0f;
         float transformation_y = 0.0f;
         float prev_transformation_x = 0.0f;
@@ -73,10 +78,29 @@ struct IToolsPanel : public IPanel {
         bool flip_y_pressed = false;
         bool scale_aspect_ratio_checked = false;
         bool contrast_stretch_pressed = false;
+        // point processing state
+        bool point_power_pressed = false;
+        bool point_log_pressed = false;
+        bool point_invert_pressed = false;
+        bool point_slice_pressed = false;
+        bool point_bitplane_pressed = false;
+        float point_gamma = 1.0f;
+        // removed explicit C constants (computed internally)
+        int point_slice_min = 0;
+        int point_slice_max = 255;
+        bool point_slice_preserve = true;
+        bool slice_use_constant = true;
+        int slice_constant_value = 255;
+        int point_bit_preview_idx = 0; // plane to preview
+        bool point_bitplane_apply_requested = false;
+        SDL_Texture* point_bit_preview_tex = nullptr;
+        int point_bit_preview_w = 0;
+        int point_bit_preview_h = 0;
 
         std::shared_ptr<program::IAcquisitorService> acquisitor = program::ServiceManager::get<program::IAcquisitorService>();
         std::weak_ptr<toolbox::Asset> assetPtr;
 
         // functions
         void restrictWindowSize();
+        void drawToolButton(enum ToolsButtons btn, const char* icon, bool hasPopup);
 };

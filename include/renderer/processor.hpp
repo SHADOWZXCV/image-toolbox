@@ -60,7 +60,19 @@ namespace toolbox {
 
             asset.dirty = true;
             program::WindowState::textureUpdate = true;
-            asset.captureSnapshot(transform.op_name());
+            // Determine scope metadata (include crop ROI even if not scoped)
+            bool applied_to_roi_meta = false;
+            int rx=0,ry=0,rw=0,rh=0;
+            if (use_roi) {
+                applied_to_roi_meta = true;
+                rx = roi_rect.x; ry = roi_rect.y; rw = roi_rect.width; rh = roi_rect.height;
+            } else if (program::WindowState::controlsState.selectionFlags.crop_enabled && roi_rect.width > 0 && roi_rect.height > 0) {
+                // Crop mode: transformation operated on ROI replacing image
+                applied_to_roi_meta = true;
+                rx = roi_rect.x; ry = roi_rect.y; rw = roi_rect.width; rh = roi_rect.height;
+            }
+
+            asset.captureSnapshot(transform.op_name(), applied_to_roi_meta, rx, ry, rw, rh);
         }
 
         static void buildFinalImageFromAsset(toolbox::Asset &asset) {

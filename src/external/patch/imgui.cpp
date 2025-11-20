@@ -9,6 +9,7 @@ auto noTextCallback = [](ImGuiInputTextCallbackData* data) -> int
     return 0; // Return 0 to allow the character
 };
 
+// WARNING: It only works with integers, it will not work with floats
 bool ImGui::InputScalarNoText(const char* label, ImGuiDataType data_type, void* p_data, const void* p_step, const void* p_step_fast, const char* format, ImGuiInputTextFlags flags)
 {
     flags |= ImGuiInputTextFlags_CallbackCharFilter;

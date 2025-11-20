@@ -198,8 +198,8 @@ void IAssetsPanel::draw() {
         const float card_rounding = st.FrameRounding > 0.0f ? st.FrameRounding : 6.0f;
         const float card_pad = 10.0f;
         const float spacing = 8.0f;
-        const float card_h = 64.0f;        // Fixed card height (no dynamic sizing)
-        const float time_offset_y = 22.0f; // Fixed offset for timestamp line under label
+        const float card_h = 78.0f;        // Increased for scope line
+        const float time_offset_y = 22.0f; // Timestamp line offset
 
         // Ensure scrollbar colors follow theme within this panel
         ImGui::PushStyleColor(ImGuiCol_ScrollbarBg, st.Colors[ImGuiCol_ChildBg]);
@@ -213,7 +213,7 @@ void IAssetsPanel::draw() {
         std::string assetId = chosenAsset->path;
         if (assetId != s_lastAssetId) { s_lastAssetId = assetId; s_lastScrollIndex = -1; }
 
-        if (ImGui::BeginChild("##history_cards", ImVec2(0, history_height), ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding)) {
+        if (ImGui::BeginChild("##history_cards", ImVec2(0, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding)) {
             int current = chosenAsset->history_index;
             ImDrawList* dl = ImGui::GetWindowDrawList();
 
@@ -233,30 +233,56 @@ void IAssetsPanel::draw() {
                 // A real child per card avoids any overlap and preserves spacing
                 ImGui::PushID(histIdx);
                 ImGui::PushStyleColor(ImGuiCol_ChildBg, is_applied ? cardBg : cardBgInactive);
-                if (ImGui::BeginChild("##history_card", ImVec2(0, card_h), ImGuiChildFlags_Borders)) {
-                    // content positions within child (local coords)
+                if (ImGui::BeginChild("##history_card", ImVec2(0, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY)) {
+                    // Smaller text scale for compact cards
+                    ImGui::SetWindowFontScale(0.85f);
+
+                    // Begin content with padding
                     ImGui::SetCursorPos(ImVec2(card_pad, card_pad));
-                    // status icon (left)
+
+                    // Status icon
                     ImGui::PushStyleColor(ImGuiCol_Text, is_applied ? accent : muted);
                     ImGui::TextUnformatted(is_applied ? ICON_FA_CIRCLE_CHECK : ICON_FA_CIRCLE);
                     ImGui::PopStyleColor();
                     ImGui::SameLine();
 
-                    // operation icon + label
-                    ImVec2 label_pos = ImGui::GetCursorPos();
+                    // Operation icon + label (wrapped)
                     std::string label = snap.label.empty() ? std::string("Edit") : snap.label;
                     const char* op_icon = pick_icon(label);
+                    float wrap_width = ImGui::GetContentRegionAvail().x - card_pad;
+                    ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + wrap_width);
                     if (!is_applied) ImGui::PushStyleColor(ImGuiCol_Text, muted);
                     ImGui::Text("%s  %s", op_icon, label.c_str());
                     if (!is_applied) ImGui::PopStyleColor();
+                    ImGui::PopTextWrapPos();
 
-                    // timestamp (under label, muted) - fixed offset
-                    ImGui::SetCursorPos(ImVec2(label_pos.x, card_pad + time_offset_y));
+                    // Timestamp line
                     ImGui::PushStyleColor(ImGuiCol_Text, muted);
                     ImGui::TextUnformatted(time_buf);
                     ImGui::PopStyleColor();
 
-                    // current chevron indicator (top-right, away from label)
+                    // Scope line (ROI start + size or Asset)
+                    std::string fileName;
+                    {
+                        size_t pos = chosenAsset->path.find_last_of("/\\");
+                        fileName = (pos == std::string::npos) ? chosenAsset->path : chosenAsset->path.substr(pos + 1);
+                    }
+                    ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + wrap_width);
+                    if (snap.applied_to_roi && snap.roi_w > 0 && snap.roi_h > 0) {
+                        ImGui::PushStyleColor(ImGuiCol_Text, accent);
+                        ImGui::Text("ROI %s start:(%d,%d) size:(%dx%d)", fileName.c_str(), snap.roi_x, snap.roi_y, snap.roi_w, snap.roi_h);
+                        ImGui::PopStyleColor();
+                    } else {
+                        ImGui::PushStyleColor(ImGuiCol_Text, muted);
+                        ImGui::Text("Asset %s", fileName.c_str());
+                        ImGui::PopStyleColor();
+                    }
+                    ImGui::PopTextWrapPos();
+
+                    // Restore font scale
+                    ImGui::SetWindowFontScale(1.0f);
+
+                    // Chevron indicator (overlay top-right)
                     if (is_current) {
                         ImVec2 childSize = ImGui::GetWindowSize();
                         float chevron_w = ImGui::CalcTextSize(ICON_FA_CHEVRON_RIGHT).x;
