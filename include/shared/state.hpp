@@ -2,6 +2,7 @@
 #include <SDL.h>
 #include <backends/imgui_impl_sdl2.h>
 #include <vector>
+#include <array>
 #include "acquisitor/acquisitor.hpp"
 
 namespace program {
@@ -54,6 +55,23 @@ namespace program {
             int bbox_rw = 0;
             int bbox_rh = 0;
         } selection;
+
+        // Pixel picker state for assigning grayscale values to specific inputs
+        enum class PickerTarget {
+            None,
+            SliceMin,
+            SliceMax,
+            ContrastR1,
+            ContrastR2,
+            ContrastS1,
+            ContrastS2
+        };
+        struct PixelPickerState {
+            bool active = false;        // mechanism engaged (ctrl held on target input)
+            PickerTarget target = PickerTarget::None; // which input is awaiting value
+            bool value_ready = false;   // a pixel value was picked this frame
+            int value = 0;              // picked intensity (0-255)
+        } picker;
     };
 
     struct WindowState {

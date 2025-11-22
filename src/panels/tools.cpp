@@ -1,5 +1,7 @@
 #include "panels/tools.hpp"
 #include <cmath>
+#include <algorithm>
+#include "shared/state.hpp"
 
 void IToolsPanel::pre_draw() {
     // set internal state
@@ -357,10 +359,48 @@ void IToolsPanel::draw() {
         ImGui::SetNextWindowSize(ImVec2(0,0));
         ImGui::Begin("CONTRAST_POPUP", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize);
         ImGui::SeparatorText("Contrast stretching options");
-        ImGui::InputScalarNoText("R1", ImGuiDataType_U16, &contrast_r1);
-        ImGui::InputScalarNoText("R2", ImGuiDataType_U16, &contrast_r2);
-        ImGui::InputScalarNoText("S1", ImGuiDataType_U16, &contrast_s1);
-        ImGui::InputScalarNoText("S2", ImGuiDataType_U16, &contrast_s2);
+        bool ctrlHeld = (SDL_GetModState() & KMOD_CTRL) != 0;
+        auto &picker = program::WindowState::controlsState.picker;
+        auto pushCtrlHintStyleC = [&](){
+            if (ctrlHeld) {
+                ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.2f, 0.35f, 0.6f, 0.30f));
+                ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.2f, 0.45f, 0.8f, 0.45f));
+                ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.2f, 0.55f, 0.9f, 0.55f));
+            }
+        };
+        auto popCtrlHintStyleC = [&](){ if (ctrlHeld) ImGui::PopStyleColor(3); };
+
+        // R1
+        pushCtrlHintStyleC();
+        bool r1Changed = ImGui::InputScalarNoText("R1", ImGuiDataType_U16, &contrast_r1);
+        if (ctrlHeld && (ImGui::IsItemActivated() || (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)))) { picker.active = true; picker.target = program::ControlsState::PickerTarget::ContrastR1; }
+        if (ctrlHeld && ImGui::IsItemHovered()) { ImGui::BeginTooltip(); ImGui::Text("Hold CTRL: Click image to pick value for R1"); ImGui::EndTooltip(); }
+        popCtrlHintStyleC();
+        if (r1Changed) { contrast_r1 = (unsigned short)std::min(255, std::max(0, (int)contrast_r1)); }
+
+        // R2
+        pushCtrlHintStyleC();
+        bool r2Changed = ImGui::InputScalarNoText("R2", ImGuiDataType_U16, &contrast_r2);
+        if (ctrlHeld && (ImGui::IsItemActivated() || (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)))) { picker.active = true; picker.target = program::ControlsState::PickerTarget::ContrastR2; }
+        if (ctrlHeld && ImGui::IsItemHovered()) { ImGui::BeginTooltip(); ImGui::Text("Hold CTRL: Click image to pick value for R2"); ImGui::EndTooltip(); }
+        popCtrlHintStyleC();
+        if (r2Changed) { contrast_r2 = (unsigned short)std::min(255, std::max(0, (int)contrast_r2)); }
+
+        // S1
+        pushCtrlHintStyleC();
+        bool s1Changed = ImGui::InputScalarNoText("S1", ImGuiDataType_U16, &contrast_s1);
+        if (ctrlHeld && (ImGui::IsItemActivated() || (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)))) { picker.active = true; picker.target = program::ControlsState::PickerTarget::ContrastS1; }
+        if (ctrlHeld && ImGui::IsItemHovered()) { ImGui::BeginTooltip(); ImGui::Text("Hold CTRL: Click image to pick value for S1"); ImGui::EndTooltip(); }
+        popCtrlHintStyleC();
+        if (s1Changed) { contrast_s1 = (unsigned short)std::min(255, std::max(0, (int)contrast_s1)); }
+
+        // S2
+        pushCtrlHintStyleC();
+        bool s2Changed = ImGui::InputScalarNoText("S2", ImGuiDataType_U16, &contrast_s2);
+        if (ctrlHeld && (ImGui::IsItemActivated() || (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)))) { picker.active = true; picker.target = program::ControlsState::PickerTarget::ContrastS2; }
+        if (ctrlHeld && ImGui::IsItemHovered()) { ImGui::BeginTooltip(); ImGui::Text("Hold CTRL: Click image to pick value for S2"); ImGui::EndTooltip(); }
+        popCtrlHintStyleC();
+        if (s2Changed) { contrast_s2 = (unsigned short)std::min(255, std::max(0, (int)contrast_s2)); }
         contrast_stretch_pressed = ImGui::Button("Apply");
         ImGui::End();
     }
@@ -386,8 +426,45 @@ void IToolsPanel::draw() {
         point_invert_pressed = ImGui::Button("Apply Invert");
         ImGui::Separator();
         ImGui::Text("Gray Level Slice");
-        ImGui::SliderInt("Min", &point_slice_min, 0, 255);
-        ImGui::SliderInt("Max", &point_slice_max, 0, 255);
+        bool ctrlHeld = (SDL_GetModState() & KMOD_CTRL) != 0;
+        auto &picker = program::WindowState::controlsState.picker;
+
+        // Highlight style when CTRL is held to hint pixel-pick mode
+        auto pushCtrlHintStyle = [&](){
+            if (ctrlHeld) {
+                ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.2f, 0.35f, 0.6f, 0.30f));
+                ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.2f, 0.45f, 0.8f, 0.45f));
+                ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.2f, 0.55f, 0.9f, 0.55f));
+            }
+        };
+        auto popCtrlHintStyle = [&](){ if (ctrlHeld) ImGui::PopStyleColor(3); };
+
+        // Min input (int 0..255)
+        pushCtrlHintStyle();
+        int prev_min = point_slice_min;
+        bool minChanged = ImGui::InputScalarNoText("Min", ImGuiDataType_S32, &point_slice_min);
+        if (ctrlHeld && (ImGui::IsItemActivated() || (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)))) {
+            picker.active = true; picker.target = program::ControlsState::PickerTarget::SliceMin;
+        }
+        if (ctrlHeld && ImGui::IsItemHovered()) {
+            ImGui::BeginTooltip(); ImGui::Text("Hold CTRL: Click image to pick value for Min"); ImGui::EndTooltip();
+        }
+        popCtrlHintStyle();
+        if (minChanged) { point_slice_min = std::min(255, std::max(0, point_slice_min)); if (point_slice_max < point_slice_min) point_slice_max = point_slice_min; }
+
+        // Max input (int 0..255)
+        pushCtrlHintStyle();
+        int prev_max = point_slice_max;
+        bool maxChanged = ImGui::InputScalarNoText("Max", ImGuiDataType_S32, &point_slice_max);
+        if (ctrlHeld && (ImGui::IsItemActivated() || (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)))) {
+            picker.active = true; picker.target = program::ControlsState::PickerTarget::SliceMax;
+        }
+        if (ctrlHeld && ImGui::IsItemHovered()) {
+            ImGui::BeginTooltip(); ImGui::Text("Hold CTRL: Click image to pick value for Max"); ImGui::EndTooltip();
+        }
+        popCtrlHintStyle();
+        if (maxChanged) { point_slice_max = std::min(255, std::max(0, point_slice_max)); if (point_slice_max < point_slice_min) point_slice_max = point_slice_min; }
+
         ImGui::Checkbox("Preserve Others", &point_slice_preserve);
         if (!point_slice_preserve) {
             ImGui::SliderInt("Constant Value", &slice_constant_value, 0, 255);
@@ -445,6 +522,32 @@ void IToolsPanel::draw() {
         }
         point_bitplane_pressed = ImGui::Button("Apply Plane");
         ImGui::End();
+    }
+
+    // Consume pixel picker value assignment if ready
+    auto &picker = program::WindowState::controlsState.picker;
+    if (picker.value_ready) {
+        int v = std::max(0, std::min(255, picker.value));
+        switch (picker.target) {
+            case program::ControlsState::PickerTarget::SliceMin: point_slice_min = v; break;
+            case program::ControlsState::PickerTarget::SliceMax: point_slice_max = v; break;
+            case program::ControlsState::PickerTarget::ContrastR1: contrast_r1 = (unsigned short)v; break;
+            case program::ControlsState::PickerTarget::ContrastR2: contrast_r2 = (unsigned short)v; break;
+            case program::ControlsState::PickerTarget::ContrastS1: contrast_s1 = (unsigned short)v; break;
+            case program::ControlsState::PickerTarget::ContrastS2: contrast_s2 = (unsigned short)v; break;
+            default: break;
+        }
+        // Enforce bounds and Max >= Min relationships
+        point_slice_min = std::min(255, std::max(0, point_slice_min));
+        point_slice_max = std::min(255, std::max(0, point_slice_max));
+        if (point_slice_max < point_slice_min) point_slice_max = point_slice_min;
+        contrast_r1 = (unsigned short)std::min(255, std::max(0, (int)contrast_r1));
+        contrast_r2 = (unsigned short)std::min(255, std::max(0, (int)contrast_r2));
+        contrast_s1 = (unsigned short)std::min(255, std::max(0, (int)contrast_s1));
+        contrast_s2 = (unsigned short)std::min(255, std::max(0, (int)contrast_s2));
+        // Forget the box (target) but keep active until CTRL released
+        picker.target = program::ControlsState::PickerTarget::None;
+        picker.value_ready = false;
     }
 
     ImDrawList* draw_list = ImGui::GetWindowDrawList();

@@ -383,33 +383,62 @@ void IImagePreviewPanel::handle_events() {
             return;
         }
 
-        if (altHeld) {
+        // Pixel picker integration: override ALT inspector when active
+        auto &picker = program::WindowState::controlsState.picker;
+        bool ctrlHeldPicker = (SDL_GetModState() & KMOD_CTRL) != 0;
+        if (picker.active && !ctrlHeldPicker) {
+            // CTRL released: deactivate picker; defer target clearing if a value is pending
+            picker.active = false;
+            if (!picker.value_ready) {
+                picker.target = program::ControlsState::PickerTarget::None;
+            }
+        }
+        if (picker.active && ctrlHeldPicker) {
             pixel_inspector_mode_enabled = true;
-
             ImVec2 mousePos = ImGui::GetIO().MousePos;
-
             // relative mouse position (screen space)
             mousePos.x -= asset->position.x;
             mousePos.y -= asset->position.y;
-
             // scale to image space
             float scale_x = asset->displayed_image.cols / asset->size.x;
             float scale_y = asset->displayed_image.rows / asset->size.y;
             float image_x = mousePos.x * scale_x;
             float image_y = mousePos.y * scale_y;
-
             if (asset->displayed_image.depth() != 0) {
                 throw std::runtime_error("unsupported image depth");
             }
-
             int ix = static_cast<int>(image_x);
             int iy = static_cast<int>(image_y);
-
             if (ix >= 0 && iy >= 0 && iy < asset->displayed_image.rows && ix < asset->displayed_image.cols) {
                 current_hovered_pixel = {ix, iy, static_cast<int>(asset->displayed_image.at<uchar>(iy, ix))};
             }
+            // On left click assign pixel value
+            if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && ix >= 0 && iy >= 0 && iy < asset->displayed_image.rows && ix < asset->displayed_image.cols) {
+                picker.value = current_hovered_pixel.intensity;
+                picker.value_ready = true; // target retained until tools panel consumes it
+            }
         } else {
-            pixel_inspector_mode_enabled = false;
+            // Fallback to ALT based inspector
+            if (altHeld) {
+                pixel_inspector_mode_enabled = true;
+                ImVec2 mousePos = ImGui::GetIO().MousePos;
+                mousePos.x -= asset->position.x;
+                mousePos.y -= asset->position.y;
+                float scale_x = asset->displayed_image.cols / asset->size.x;
+                float scale_y = asset->displayed_image.rows / asset->size.y;
+                float image_x = mousePos.x * scale_x;
+                float image_y = mousePos.y * scale_y;
+                if (asset->displayed_image.depth() != 0) {
+                    throw std::runtime_error("unsupported image depth");
+                }
+                int ix = static_cast<int>(image_x);
+                int iy = static_cast<int>(image_y);
+                if (ix >= 0 && iy >= 0 && iy < asset->displayed_image.rows && ix < asset->displayed_image.cols) {
+                    current_hovered_pixel = {ix, iy, static_cast<int>(asset->displayed_image.at<uchar>(iy, ix))};
+                }
+            } else {
+                pixel_inspector_mode_enabled = false;
+            }
         }
 
         if (spaceHeld) {
