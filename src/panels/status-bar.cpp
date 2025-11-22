@@ -83,8 +83,9 @@ void IStatusBarPanel::draw() {
         angle_deg = std::atan2(b, a) * 180.0f / 3.14159265f; // approximate ignoring shear
         has_rotation = std::fabs(angle_deg) > 0.01f || controls.geoTransformFlags.rotation_center_enabled;
     }
-    bool show_rotation = has_rotation;
-    bool show_skew = controls.geoTransformFlags.skew_enabled;
+    // Only show rotation/skew badges while geo transform panel active
+    bool show_rotation = controls.geoTransformEnabled && has_rotation;
+    bool show_skew = controls.geoTransformEnabled && controls.geoTransformFlags.skew_enabled;
 
     if (show_roi || show_crop || show_rotation || show_skew) {
         ImGui::SameLine();

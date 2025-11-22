@@ -174,6 +174,12 @@ void IToolsPanel::handle_events() {
 
     if (!buttonPressed(GEO_TRANSFORMATION_BUTTON)) {
         program::WindowState::controlsState.geoTransformEnabled = false;
+        // Clear transient geo interaction flags when panel is inactive
+        program::WindowState::controlsState.geoTransformFlags.rotation_center_enabled = false;
+        program::WindowState::controlsState.geoTransformFlags.skew_enabled = false;
+        program::WindowState::controlsState.geoTransformFlags.scale_enabled = false;
+        program::WindowState::controlsState.geoTransformFlags.translate_enabled = false;
+        program::WindowState::controlsState.geoTransformFlags.flip_command_enabled = false;
     }
 }
 
@@ -240,8 +246,16 @@ void IToolsPanel::draw() {
     popupButton(POINT_PROCESSING_BUTTON, ICON_FA_BOLT);
 
     bool wasContrastPressed = (activePopup == CONTRAST_BUTTON);
-    bool wasGeoPressed = (activePopup == GEO_TRANSFORMATION_BUTTON);
-    bool wasPointPressed = (activePopup == POINT_PROCESSING_BUTTON);
+    bool wasGeoPressed      = (activePopup == GEO_TRANSFORMATION_BUTTON);
+    bool wasPointPressed    = (activePopup == POINT_PROCESSING_BUTTON);
+
+    // If geo popup closed this frame, also clear local toggles (they persist otherwise)
+    if (!wasGeoPressed) {
+        rotate_center_mouse_checked = false;
+        skew_checked = false;
+        scale_mouse_checked = false;
+        translate_mouse_checked = false;
+    }
 
     float delta_scale_x = prev_scale_x ? scale_x / prev_scale_x : 1;
     float delta_scale_y = prev_scale_y ? scale_y / prev_scale_y : 1;
