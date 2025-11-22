@@ -59,7 +59,6 @@ namespace toolbox {
                 int slice_min = 0;
                 int slice_max = 255;
                 bool slice_preserve = true;
-                bool slice_constant = true;
                 int slice_constant_value = 255;
                 bool bit_plane_used = false;
                 int bit_plane = 0;
@@ -79,7 +78,6 @@ namespace toolbox {
             int slice_min = 0;
             int slice_max = 255;
             bool slice_preserve = true;
-            bool slice_constant = true;
             int slice_constant_value = 255;
             bool bit_plane_used = false;
             int bit_plane = 0;
@@ -138,7 +136,6 @@ namespace toolbox {
                 s.point_params.slice_min = pointParams.slice_min;
                 s.point_params.slice_max = pointParams.slice_max;
                 s.point_params.slice_preserve = pointParams.slice_preserve;
-                s.point_params.slice_constant = pointParams.slice_constant;
                 s.point_params.slice_constant_value = pointParams.slice_constant_value;
                 s.point_params.bit_plane_used = pointParams.bit_plane_used;
                 s.point_params.bit_plane = pointParams.bit_plane;
@@ -165,7 +162,6 @@ namespace toolbox {
                 s.point_params.slice_min = pointParams.slice_min;
                 s.point_params.slice_max = pointParams.slice_max;
                 s.point_params.slice_preserve = pointParams.slice_preserve;
-                s.point_params.slice_constant = pointParams.slice_constant;
                 s.point_params.slice_constant_value = pointParams.slice_constant_value;
                 s.point_params.bit_plane_used = pointParams.bit_plane_used;
                 s.point_params.bit_plane = pointParams.bit_plane;
@@ -196,7 +192,6 @@ namespace toolbox {
             pointParams.slice_min = s.point_params.slice_min;
             pointParams.slice_max = s.point_params.slice_max;
             pointParams.slice_preserve = s.point_params.slice_preserve;
-            pointParams.slice_constant = s.point_params.slice_constant;
             pointParams.slice_constant_value = s.point_params.slice_constant_value;
             pointParams.bit_plane_used = s.point_params.bit_plane_used;
             pointParams.bit_plane = s.point_params.bit_plane;
@@ -222,7 +217,6 @@ namespace toolbox {
             pointParams.slice_min = s.point_params.slice_min;
             pointParams.slice_max = s.point_params.slice_max;
             pointParams.slice_preserve = s.point_params.slice_preserve;
-            pointParams.slice_constant = s.point_params.slice_constant;
             pointParams.slice_constant_value = s.point_params.slice_constant_value;
             pointParams.bit_plane_used = s.point_params.bit_plane_used;
             pointParams.bit_plane = s.point_params.bit_plane;

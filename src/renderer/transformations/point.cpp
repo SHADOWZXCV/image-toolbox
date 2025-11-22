@@ -78,9 +78,9 @@ void PointProcessing::GrayLevelSlice::apply(toolbox::Asset &asset) {
         for (int ccol = 0; ccol < img.cols; ++ccol) {
             uchar intensity = row[ccol];
             if (intensity >= lo && intensity <= hi) {
-                row[ccol] = static_cast<uchar>(useConstant ? clampedConst : maxVal);
+                row[ccol] = static_cast<uchar>(maxVal);
             } else if (!preserveOthers) {
-                row[ccol] = 0;
+                row[ccol] = static_cast<uchar>(clampedConst);
             }
         }
     }

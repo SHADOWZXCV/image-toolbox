@@ -42,6 +42,17 @@ namespace program {
             bool has_roi = false;       // a valid ROI exists
             ImVec2 start_img{0,0};      // ROI start in image coordinates
             ImVec2 end_img{0,0};        // ROI end in image coordinates
+            // Quadrilateral in base image space (exact mapped corners)
+            std::array<cv::Point2f,4> quad_base{ cv::Point2f(),cv::Point2f(),cv::Point2f(),cv::Point2f() };
+            bool quad_valid = false;
+            // Displayed selection rectangle size (axis-aligned in displayed image)
+            int disp_rect_w = 0;
+            int disp_rect_h = 0;
+            // Bounding box of quad in base image space (for metadata / quick scoping)
+            int bbox_rx = 0;
+            int bbox_ry = 0;
+            int bbox_rw = 0;
+            int bbox_rh = 0;
         } selection;
     };
 

@@ -19,9 +19,9 @@ namespace toolbox {
             void apply(toolbox::Asset &asset) override;
         };
         struct GrayLevelSlice : public Transformation {
-            int minI; int maxI; bool preserveOthers; bool useConstant; int constantValue;
-            GrayLevelSlice(int minI_, int maxI_, bool preserve_, bool useConst_, int constVal_) :
-                minI(minI_), maxI(maxI_), preserveOthers(preserve_), useConstant(useConst_), constantValue(constVal_) {}
+            int minI; int maxI; bool preserveOthers; int constantValue;
+            GrayLevelSlice(int minI_, int maxI_, bool preserve_, int constVal_) :
+                minI(minI_), maxI(maxI_), preserveOthers(preserve_), constantValue(constVal_) {}
             const char* op_name() const override { return "Gray Level Slice"; }
             void apply(toolbox::Asset &asset) override;
         };

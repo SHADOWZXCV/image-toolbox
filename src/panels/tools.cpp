@@ -30,7 +30,6 @@ void IToolsPanel::pre_draw() {
         point_slice_max = asset->pointParams.slice_max;
         point_bit_preview_idx = asset->pointParams.bit_plane;
         point_slice_preserve = asset->pointParams.slice_preserve;
-        slice_use_constant = asset->pointParams.slice_constant;
         slice_constant_value = asset->pointParams.slice_constant_value;
     }
 }
@@ -157,9 +156,8 @@ void IToolsPanel::handle_events() {
                 asset->pointParams.slice_min = point_slice_min;
                 asset->pointParams.slice_max = point_slice_max;
                 asset->pointParams.slice_preserve = point_slice_preserve;
-                asset->pointParams.slice_constant = slice_use_constant;
                 asset->pointParams.slice_constant_value = slice_constant_value;
-                toolbox::OpenCVProcessor::process<toolbox::PointProcessing::GrayLevelSlice>(*asset, point_slice_min, point_slice_max, point_slice_preserve, slice_use_constant, slice_constant_value);
+                toolbox::OpenCVProcessor::process<toolbox::PointProcessing::GrayLevelSlice>(*asset, point_slice_min, point_slice_max, point_slice_preserve, slice_constant_value);
                 point_slice_pressed = false;
             }
             if (point_bitplane_pressed) {
@@ -390,27 +388,9 @@ void IToolsPanel::draw() {
         ImGui::Text("Gray Level Slice");
         ImGui::SliderInt("Min", &point_slice_min, 0, 255);
         ImGui::SliderInt("Max", &point_slice_max, 0, 255);
-        if (!point_slice_preserve && !slice_use_constant) {
-            ImGui::Checkbox("Preserve Others", &point_slice_preserve);
-            ImGui::Checkbox("Use Constant Highlight", &slice_use_constant);
-            if (point_slice_preserve && slice_use_constant) {
-                slice_use_constant = false; // prefer preserve
-            }
-        } else if (point_slice_preserve) {
-            ImGui::Checkbox("Preserve Others", &point_slice_preserve);
-            if (!point_slice_preserve) {
-                slice_use_constant = false; // reset both
-            } else {
-                slice_use_constant = false; // enforce exclusivity
-            }
-        } else if (slice_use_constant) {
-            ImGui::Checkbox("Use Constant Highlight", &slice_use_constant);
-            if (!slice_use_constant) {
-                point_slice_preserve = false; // reset both
-            } else {
-                point_slice_preserve = false; // enforce exclusivity
-                ImGui::SliderInt("Constant Value", &slice_constant_value, 0, 255);
-            }
+        ImGui::Checkbox("Preserve Others", &point_slice_preserve);
+        if (!point_slice_preserve) {
+            ImGui::SliderInt("Constant Value", &slice_constant_value, 0, 255);
         }
         point_slice_pressed = ImGui::Button("Apply Slice");
         ImGui::Separator();

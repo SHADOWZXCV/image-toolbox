@@ -316,19 +316,63 @@ void IImagePreviewPanel::handle_events() {
             if (sel.is_dragging && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
                 sel.is_dragging = false;
                 sel.has_roi = true;
-
-                if (flags.crop_enabled) {
-                    // Compute integer ROI and apply crop
-                    int x0 = (int)std::floor(std::min(sel.start_img.x, sel.end_img.x));
-                    int y0 = (int)std::floor(std::min(sel.start_img.y, sel.end_img.y));
-                    int x1 = (int)std::ceil (std::max(sel.start_img.x, sel.end_img.x));
-                    int y1 = (int)std::ceil (std::max(sel.start_img.y, sel.end_img.y));
-                    int w = std::max(0, x1 - x0);
-                    int h = std::max(0, y1 - y0);
-                    if (w > 0 && h > 0) {
-                        toolbox::OpenCVProcessor::process<toolbox::Enahnce::Crop>(*asset, x0, y0, w, h);
+                // Compute quadrilateral in base image coordinates via inverse transform
+                float sx0 = std::min(sel.start_img.x, sel.end_img.x);
+                float sy0 = std::min(sel.start_img.y, sel.end_img.y);
+                float sx1 = std::max(sel.start_img.x, sel.end_img.x);
+                float sy1 = std::max(sel.start_img.y, sel.end_img.y);
+                sel.disp_rect_w = (int)std::round(sx1 - sx0);
+                sel.disp_rect_h = (int)std::round(sy1 - sy0);
+                std::vector<cv::Point2f> dispQuad = {
+                    {sx0, sy0}, {sx1, sy0}, {sx1, sy1}, {sx0, sy1}
+                };
+                cv::Mat Minv = asset->transformation.inv();
+                std::vector<cv::Point2f> quad_base_vec;
+                cv::perspectiveTransform(dispQuad, quad_base_vec, Minv);
+                if (quad_base_vec.size() == 4) {
+                    for (int i=0;i<4;i++) sel.quad_base[i] = quad_base_vec[i];
+                    sel.quad_valid = true;
+                    // Clamp to bounds
+                    int img_w = asset->base_image.cols; int img_h = asset->base_image.rows;
+                    for (auto &p : sel.quad_base) {
+                        p.x = std::max(0.f, std::min(p.x, (float)img_w - 1.f));
+                        p.y = std::max(0.f, std::min(p.y, (float)img_h - 1.f));
                     }
-                    // Reset selection after crop
+                    float minx = sel.quad_base[0].x, maxx = sel.quad_base[0].x;
+                    float miny = sel.quad_base[0].y, maxy = sel.quad_base[0].y;
+                    for (int i=1;i<4;i++) {
+                        minx = std::min(minx, sel.quad_base[i].x); maxx = std::max(maxx, sel.quad_base[i].x);
+                        miny = std::min(miny, sel.quad_base[i].y); maxy = std::max(maxy, sel.quad_base[i].y);
+                    }
+                    sel.bbox_rx = (int)std::floor(minx);
+                    sel.bbox_ry = (int)std::floor(miny);
+                    sel.bbox_rw = (int)std::ceil(maxx - minx + 1.f);
+                    sel.bbox_rh = (int)std::ceil(maxy - miny + 1.f);
+                    if (sel.bbox_rx < 0) sel.bbox_rx = 0; if (sel.bbox_ry < 0) sel.bbox_ry = 0;
+                    if (sel.bbox_rx + sel.bbox_rw > img_w) sel.bbox_rw = img_w - sel.bbox_rx;
+                    if (sel.bbox_ry + sel.bbox_rh > img_h) sel.bbox_rh = img_h - sel.bbox_ry;
+                } else {
+                    sel.quad_valid = false;
+                }
+                // Crop mode: perform perspective crop immediately
+                if (flags.crop_enabled && sel.quad_valid && sel.disp_rect_w > 0 && sel.disp_rect_h > 0) {
+                    cv::Rect bbox(sel.bbox_rx, sel.bbox_ry, sel.bbox_rw, sel.bbox_rh);
+                    cv::Mat sub = asset->base_image(bbox);
+                    // Offset quad points relative to bbox
+                    std::vector<cv::Point2f> quad_offset(4);
+                    for (int i=0;i<4;i++) quad_offset[i] = cv::Point2f(sel.quad_base[i].x - sel.bbox_rx, sel.quad_base[i].y - sel.bbox_ry);
+                    std::vector<cv::Point2f> dstRect = {
+                        {0.f,0.f}, {(float)sel.disp_rect_w-1.f,0.f}, {(float)sel.disp_rect_w-1.f,(float)sel.disp_rect_h-1.f}, {0.f,(float)sel.disp_rect_h-1.f}
+                    };
+                    cv::Mat H = cv::getPerspectiveTransform(quad_offset, dstRect);
+                    cv::Mat cropped;
+                    cv::warpPerspective(sub, cropped, H, cv::Size(sel.disp_rect_w, sel.disp_rect_h), cv::INTER_LINEAR, cv::BORDER_REPLICATE);
+                    asset->base_image = cropped;
+                    asset->transformation = cv::Mat::eye(3,3,CV_32F); // reset transform post-crop
+                    asset->dirty = true;
+                    program::WindowState::textureUpdate = true;
+                    asset->captureSnapshot("Crop", true, sel.bbox_rx, sel.bbox_ry, sel.bbox_rw, sel.bbox_rh);
+                    // Reset selection state after crop
                     flags.crop_enabled = false;
                     flags.roi_enabled = false;
                     program::WindowState::controlsState.selection = {};

@@ -90,7 +90,6 @@ struct IToolsPanel : public IPanel {
         int point_slice_min = 0;
         int point_slice_max = 255;
         bool point_slice_preserve = true;
-        bool slice_use_constant = true;
         int slice_constant_value = 255;
         int point_bit_preview_idx = 0; // plane to preview
         bool point_bitplane_apply_requested = false;
